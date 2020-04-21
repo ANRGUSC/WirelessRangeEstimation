@@ -12,6 +12,8 @@ amount of variation depending on how much scattering and absorption there is in 
 some device-specific variations - the uncertainty corresponding to these variations can be captured to some extent 
 in the standard deviation parameter. 
 
+Example usage: d_est, d_min, d_max = range_estimate(-70)  
+
 
 
 Contributor: Bhaskar Krishnamachari, bkrishna@usc.edu, University of Southern California
