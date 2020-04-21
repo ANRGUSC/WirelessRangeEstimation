@@ -10,8 +10,7 @@ at 1m), and the standard deviation of the RSS measurements. All these numbers ca
 measurements and/or could be potentially looked up from references. 
 
 Something to keep in mind is that there is typically a good amount of variation depending on how much 
-scattering and absorption there is in the environment and also there will some device-specific variations 
-- the uncertainty corresponding to these variations can be captured to some extent in the standard deviation parameter. 
+scattering and absorption there is in the environment and also there will some device-specific variations. The uncertainty corresponding to these variations can be captured in the standard deviation parameter. 
 
 Example usage: d_est, d_min, d_max = range_estimate(-70)  
 
