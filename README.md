@@ -1,5 +1,5 @@
 # WirelessRangeEstimation
-Code to estimate distance range between wireless devices based on radio signal strength (RSS) measurements
+Open source code to estimate distance range between wireless devices based on radio signal strength (RSS) measurements
 
 range_estimation.py: This python file contains a function range_estimation() that ouputs an estimated distance 
 as well as an uncertainty range of distances (dmin, dmax) corresponding to a given radio signal strength (RSS) 
@@ -11,3 +11,7 @@ could be potentially looked up from other references; something to keep in mind 
 amount of variation depending on how much scattering and absorption there is in the environment and also there will 
 some device-specific variations - the uncertainty corresponding to these variations can be captured to some extent 
 in the standard deviation parameter. 
+
+
+
+Contributor: Bhaskar Krishnamachari, bkrishna@usc.edu, University of Southern California
