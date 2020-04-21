@@ -6,14 +6,14 @@ def range_estimate(power_received, params=None):
 
     Parameters:
         power_received (float): RSS reading in dBm
-        params (4-tuple of floats): (dref, Pref, n, stdevP)
-            dref is the reference distance in m
-            Pref is the received power at the reference distance
-            n is the path loss exponent 
-            stdevP is standard deviation of received Power in dB
+        params (4-tuple float): (d_ref, power_ref, path_loss_exp, stdev_power)
+            d_ref is the reference distance in m
+            power_ref is the received power at the reference distance
+            path_loss_exp is the path loss exponent 
+            stdev_power is standard deviation of received Power in dB
 
     Returns: 
-        (d_est, dmin, dmax): a 3-tuple of float values containing
+        (d_est, d_min, d_max): a 3-tuple of float values containing
             the estimated distance, as well as the minimum and maximum 
             distance estimates corresponding to the uncertainty in RSS,
             respectively, in meters rounded to two decimal points
@@ -24,25 +24,25 @@ def range_estimate(power_received, params=None):
           # the above values are arbitrarily chosen "default values" 
           # should be changed based on measurements
 
-    dref = params[0] # reference distance
-    Pref = params[1] # mean received power at reference distance
-    n = params[2] # path loss exponent
-    stdevP = params[3] # standard deviation of received power
+    d_ref = params[0] # reference distance
+    power_ref = params[1] # mean received power at reference distance
+    path_loss_exp = params[2] # path loss exponent
+    stdev_power = params[3] # standard deviation of received power
 
-    u = 2*stdevP # uncertainty in power as 2*std. deviations, ~95.45% interval
+    uncertainty = 2*stdev_power # uncertainty in RSS corresponding to 95.45% confidence
 
-    d_est = dref*(10**(-(power_received - Pref)/(10*n)))
-    dmin = dref*(10**(-(power_received + u - Pref)/(10*n)))
-    dmax = dref*(10**(-(power_received - u - Pref)/(10*n)))
+    d_est = d_ref*(10**(-(power_received - power_ref)/(10*path_loss_exp)))
+    d_min = d_ref*(10**(-(power_received - power_ref + uncertainty)/(10*path_loss_exp)))
+    d_max = d_ref*(10**(-(power_received - power_ref - uncertainty)/(10*path_loss_exp)))
 
-    return (round(d_est), round(dmin,2), round(dmax,2))
+    return (round(d_est), round(d_min,2), round(d_max,2))
 
 
 # example usage, for testing
 print("Example: say RSS = -70dBm") 
-d_est, dmin, dmax = range_estimate(-70)
+d_est, d_min, d_max = range_estimate(-70)
 print("Estimated distance in meters is: ", d_est)
-print("Distance uncertainty range in meters is: ", (dmin, dmax)) 
+print("Distance uncertainty range in meters is: ", (d_min, d_max)) 
 #print(range_estimate(-70, (1.0, -55.0, 4, 3)))
 
 
