@@ -35,7 +35,7 @@ def range_estimate(power_received, params=None):
     d_min = d_ref*(10**(-(power_received - power_ref + uncertainty)/(10*path_loss_exp)))
     d_max = d_ref*(10**(-(power_received - power_ref - uncertainty)/(10*path_loss_exp)))
 
-    return (round(d_est), round(d_min,2), round(d_max,2))
+    return (round(d_est, 2), round(d_min,2), round(d_max,2))
 
 
 # example usage, for testing
