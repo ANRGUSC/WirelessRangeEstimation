@@ -1,6 +1,6 @@
 # Wireless Range Estimation
 
-This repository contains open source code that can be used to estimate the distance range between wireless devices based on radio signal strength (RSS) measurements.
+This repository contains open source python code that can be used to estimate the distance range between wireless devices based on radio signal strength (RSS) measurements. It contains the following programs. 
 
 **estimate_distance.py**: This python file contains a function `estimate_distance()` that outputs an estimated distance
 as well as an uncertainty range of distances (dmin, dmax) in meters corresponding to a given radio signal strength (RSS)
