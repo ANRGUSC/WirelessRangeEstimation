@@ -10,10 +10,6 @@ radio power decays with distance), mean received power at a reference distance (
 at 1m), and the standard deviation of the RSS measurements. All these numbers can be estimated based on empirical
 measurements and/or could be potentially looked up from references.
 
-Something to keep in mind is that there is typically a good amount of variation depending on how much
-scattering and absorption there is in the environment and also there will some device-specific variations.
-The uncertainty corresponding to these variations can be captured in the standard deviation parameter.
-
 Example usage: `d_est, d_min, d_max = estimate_distance(-70)`
 
 **estimate_distance_matrix.py**: This python file contains a function `estimate_distance_matrix()` which takes an RSS matrix
@@ -25,7 +21,7 @@ Example usage: `distance_matrix, node_locs = estimate_distance_matrix(rss_matrix
 
 Example usage: `distance_matrix, _ = estimate_distance_matrix(rss_matrix, use_model="rss_only")`
 
-**simulate_rss_matrix.py**: This python file contains a function `simulate_rss_matrix()` that generates a random set of device locations and their corresponding RSS matrix.
+**simulate_rss_matrix.py**: This python file contains a function `simulate_rss_matrix()` that generates a random set of device locations and their corresponding RSS matrix. It can be used as a way to evaluate estimate_distance_matrix via simulations. 
 
 Example usage: `node_locs, rss_matrix = simulate_rss_matrix(num_nodes=4, area_side=100)`
 
