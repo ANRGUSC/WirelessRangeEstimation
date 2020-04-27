@@ -112,17 +112,17 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         print("use_model not defined")
         return
 
-# example usage, for testing
-if __name__ == '__main__':
-    node_locs, rss_matrix = simulate_rss_matrix(4,20,params=(1.0, -45, 2.9, 4.0))
-    print("Sample RSS matrix:")
-    print(rss_matrix)
-    print("Estimated distance matrix (rss_only):")
-    print(estimate_distance_matrix(rss_matrix,
-                                    use_model="rss_only",
-                                    estimate_distance_params=(1.0, -45, 2.9, 4.0))[0])
-    print("Estimated distance matrix (spring_model):")
-    print(estimate_distance_matrix(rss_matrix,
-                                    use_model="spring_model",
-                                    estimate_distance_params=(1.0, -45, 2.9, 4.0),
-                                    spring_model_params=(100, 0.2, 0.1, False))[0])
+# # example usage, for testing
+# if __name__ == '__main__':
+#     node_locs, rss_matrix = simulate_rss_matrix(4,20,params=(1.0, -45, 2.9, 4.0))
+#     print("Sample RSS matrix:")
+#     print(rss_matrix)
+#     print("Estimated distance matrix (rss_only):")
+#     print(estimate_distance_matrix(rss_matrix,
+#                                     use_model="rss_only",
+#                                     estimate_distance_params=(1.0, -45, 2.9, 4.0))[0])
+#     print("Estimated distance matrix (spring_model):")
+#     print(estimate_distance_matrix(rss_matrix,
+#                                     use_model="spring_model",
+#                                     estimate_distance_params=(1.0, -45, 2.9, 4.0),
+#                                     spring_model_params=(100, 0.2, 0.1, False))[0])

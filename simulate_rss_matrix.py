@@ -58,9 +58,9 @@ def simulate_rss_matrix(num_nodes, area_side, params=None, threshold=None):
 
 
 ## uncomment the following to test the function out
-if __name__ == '__main__':
-    nl, rm = simulate_rss_matrix(4, 100)
-    print("Node locations array")
-    print(nl)
-    print("RSS Matrix")
-    print(rm)
+# if __name__ == '__main__':
+#     nl, rm = simulate_rss_matrix(4, 100)
+#     print("Node locations array")
+#     print(nl)
+#     print("RSS Matrix")
+#     print(rm)

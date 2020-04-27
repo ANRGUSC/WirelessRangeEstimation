@@ -40,10 +40,10 @@ def estimate_distance(power_received, params=None):
     return (np.round(d_est,2), np.round(d_min,2), np.round(d_max,2))
 
 
-# example usage, for testing
-if __name__ == '__main__':
-    print("Example: say RSS = -70dBm")
-    d_est, d_min, d_max = estimate_distance(-70)
-    print("Estimated distance in meters is: ", d_est)
-    print("Distance uncertainty range in meters is: ", (d_min, d_max))
-    print(estimate_distance(-70, (1.0, -55.0, 4, 3)))
+# # example usage, for testing
+# if __name__ == '__main__':
+#     print("Example: say RSS = -70dBm")
+#     d_est, d_min, d_max = estimate_distance(-70)
+#     print("Estimated distance in meters is: ", d_est)
+#     print("Distance uncertainty range in meters is: ", (d_min, d_max))
+#     print(estimate_distance(-70, (1.0, -55.0, 4, 3)))
