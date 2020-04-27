@@ -25,9 +25,9 @@ Example usage: `distance_matrix, node_locs = estimate_distance_matrix(rss_matrix
 
 Example usage: `distance_matrix, _ = estimate_distance_matrix(rss_matrix, use_model="rss_only")`
 
-**simulate_rss_matrix.py**: This python file contains a function `simulation_rss_matrix()` that generates a random set of device locations and their corresponding RSS matrix.
+**simulate_rss_matrix.py**: This python file contains a function `simulate_rss_matrix()` that generates a random set of device locations and their corresponding RSS matrix.
 
-Example usage: `node_locs, rss_matrix = simulation_rss_matrix(num_nodes=4, area_side=100)`
+Example usage: `node_locs, rss_matrix = simulate_rss_matrix(num_nodes=4, area_side=100)`
 
 
 Contributors: Lillian Clark (lilliamc@usc.edu) and Bhaskar Krishnamachari (bkrishna@usc.edu), University of Southern California
