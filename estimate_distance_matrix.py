@@ -1,8 +1,17 @@
 import numpy as np
 import time
 import matplotlib.pyplot as plt
+from sklearn import manifold
 from estimate_distance import estimate_distance
 from simulate_rss_matrix import simulate_rss_matrix
+
+def distance_matrix_from_locs(node_locs):
+    n = node_locs.shape[0]
+    distance_matrix = np.zeros([n,n])
+    for i in range(n):
+        for j in range(n):
+            distance_matrix[i][j] = round(np.linalg.norm(np.subtract(node_locs[i],node_locs[j])),2)
+    return distance_matrix
 
 def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_distance_params=None,spring_model_params=None):
     '''
@@ -60,6 +69,21 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         distance_matrix = distance_matrix - np.eye(n)*distance_matrix[0][0]
         return distance_matrix, None
 
+    elif use_model == "mds":
+        rss_matrix = (rss_matrix + rss_matrix.T)/2
+        distance_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
+        np.fill_diagonal(distance_matrix,0)
+        use_metric = True # set as parameter
+        mds = manifold.MDS(n_components=2, metric=use_metric, max_iter=3000, eps=1e-12,
+                    dissimilarity="precomputed", n_jobs=1)
+        node_locs = mds.fit_transform(distance_matrix)
+        estimated_distance_matrix = distance_matrix_from_locs(node_locs)
+        # scale the data
+        argmin = np.where(distance_matrix==np.min(distance_matrix[distance_matrix>0]))[0]
+        transform = distance_matrix[argmin[0],argmin[1]]/estimated_distance_matrix[argmin[0],argmin[1]]
+        estimated_distance_matrix = estimated_distance_matrix*transform
+        return np.round(estimated_distance_matrix,2), node_locs
+
     elif use_model == "spring_model":
         # start with random estimates
         estimated_locations = np.random.rand(n,2)
@@ -100,29 +124,44 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
 
         end = time.time()
         print("\ttime elapsed:",end-start,"seconds")
-
-        # use final location estimates to populate distance matrix
-        distance_matrix = np.zeros([n,n])
-        for i in range(n):
-            for j in range(n):
-                distance_matrix[i][j] = round(np.linalg.norm(np.subtract(estimated_locations[i],estimated_locations[j])),2)
-        return distance_matrix, estimated_locations
+        return distance_matrix_from_locs(estimated_locations), estimated_locations
 
     else:
         print("use_model not defined")
         return
 
-# # example usage, for testing
-# if __name__ == '__main__':
-#     node_locs, rss_matrix = simulate_rss_matrix(4,20,params=(1.0, -45, 2.9, 4.0))
-#     print("Sample RSS matrix:")
-#     print(rss_matrix)
-#     print("Estimated distance matrix (rss_only):")
-#     print(estimate_distance_matrix(rss_matrix,
-#                                     use_model="rss_only",
-#                                     estimate_distance_params=(1.0, -45, 2.9, 4.0))[0])
-#     print("Estimated distance matrix (spring_model):")
-#     print(estimate_distance_matrix(rss_matrix,
-#                                     use_model="spring_model",
-#                                     estimate_distance_params=(1.0, -45, 2.9, 4.0),
-#                                     spring_model_params=(100, 0.2, 0.1, False))[0])
+# example usage, for testing
+if __name__ == '__main__':
+    n = 10
+    node_locs, rss_matrix = simulate_rss_matrix(n,20,params=(1.0, -45, 2.9, 4.0))
+    print("Sample RSS matrix:")
+    print(rss_matrix)
+    print("True distance matrix:")
+    true_dist_matrix = distance_matrix_from_locs(node_locs)
+    print(true_dist_matrix)
+    print("")
+    print("Estimated distance matrix (rss_only):")
+    rss_only = estimate_distance_matrix(rss_matrix,
+                                    use_model="rss_only",
+                                    estimate_distance_params=(1.0, -45, 2.9, 4.0))[0]
+    print(rss_only)
+    percent_error = np.nanmean(np.divide(abs(np.subtract(true_dist_matrix,rss_only)),true_dist_matrix+np.eye(n)))
+    print("Average percent error:",percent_error)
+    print("")
+    print("Estimated distance matrix (spring_model):")
+    spring_model = estimate_distance_matrix(rss_matrix,
+                                    use_model="spring_model",
+                                    estimate_distance_params=(1.0, -45, 2.9, 4.0),
+                                    spring_model_params=(100, 0.2, 0.1, False))[0]
+    print(spring_model)
+    percent_error = np.nanmean(np.divide(abs(np.subtract(true_dist_matrix,spring_model)),true_dist_matrix+np.eye(n)))
+    print("Average percent error:",percent_error)
+    print("")
+    print("Estimated distance matrix (MDS):")
+    mds = estimate_distance_matrix(rss_matrix,
+                                    use_model="mds",
+                                    estimate_distance_params=(1.0, -45, 2.9, 4.0))[0]
+    print(mds)
+    percent_error = np.nanmean(np.divide(abs(np.subtract(true_dist_matrix,mds)),true_dist_matrix+np.eye(n)))
+    print("Average percent error:",percent_error)
+    print("")
