@@ -87,43 +87,38 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
     elif use_model == "spring_model":
         # start with random estimates
         estimated_locations = np.random.rand(n,2)
-
-        # set True to visualize spring model
+        previous_estimates = estimated_locations.copy()
         start = time.time()
-
         for iteration in range(max_iterations):
-            sum_force = 0
             for i in range(n):
                 total_force = [0,0]
                 for j in range(n):
                     if j != i:
                         i_to_j = np.subtract(estimated_locations[j],estimated_locations[i])
                         dist_est = np.linalg.norm(i_to_j)
-
-                        dist_meas, dist_min, dist_max = estimate_distance(0.5*(rss_matrix[i][j]+rss_matrix[j][i]), estimate_distance_params)
+                        dist_meas, dist_min, dist_max = estimate_distance(rss_matrix[i][j], estimate_distance_params)
                         uncertainty = dist_max-dist_min
                         e = (dist_est-dist_meas)
-
                         # magnitude of force applied by a pair is the error in our current estimate,
                         # weighted by how likely the RSS measurement is to be accurate
                         force = (e/uncertainty)*(i_to_j/dist_est)
                         total_force = np.add(total_force,force)
-
+                previous_estimates[i] = estimated_locations[i]
                 estimated_locations[i] = np.add(estimated_locations[i],step_size*total_force)
-                sum_force+=np.linalg.norm(total_force)
-
             if epsilon:
-                if sum_force/n < epsilon:
+                converged = True
+                for i in range(n):
+                    if np.linalg.norm(previous_estimates[i] - estimated_locations[i]) > epsilon:
+                        converged = False
+                if converged:
                     print("\tconverged in:",iteration,"iterations")
                     break
-
             if show_visualization: # visualize the algorithm's progress
                 plt.scatter(estimated_locations[:,0],estimated_locations[:,1],c=list(range(n)))
                 plt.pause(0.01)
                 time.sleep(0.01)
-
         end = time.time()
-        print("\ttime elapsed:",end-start,"seconds")
+        # print("\ttime elapsed:",end-start,"seconds")
         return distance_matrix_from_locs(estimated_locations), estimated_locations
 
     else:
@@ -152,7 +147,7 @@ if __name__ == '__main__':
     spring_model = estimate_distance_matrix(rss_matrix,
                                     use_model="spring_model",
                                     estimate_distance_params=(1.0, -45, 2.9, 4.0),
-                                    spring_model_params=(100, 0.2, 0.1, False))[0]
+                                    spring_model_params=(100, 0.2, 0.1, True))[0]
     print(spring_model)
     percent_error = np.nanmean(np.divide(abs(np.subtract(true_dist_matrix,spring_model)),true_dist_matrix+np.eye(n)))
     print("Average percent error:",percent_error)
