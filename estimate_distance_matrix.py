@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn import manifold
 from estimate_distance import estimate_distance
 from simulate_rss_matrix import simulate_rss_matrix
+from snl_sdp import SolveSNLWithSDP, DistBetweenLocs, NodeLocsToDistanceMatrix, DistanceMatrixToDict
 
 def distance_matrix_from_locs(node_locs):
     n = node_locs.shape[0]
@@ -22,10 +23,18 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         rss_matrix (array): (n,n)-sized array giving RSS values
                 between pairs of devices in dB, where n is the total number of devices.
                 rss_matrix[i,j] gives RSS at device j when device i transmits.
-        use_model (string): string from {"spring_model", "rss_only"}
-                Spring model takes all available RSS values into consideration
-                when determining the distance between two devices.
-                RSS only considers on the RSS value for the specific pair.
+        use_model (string): string from {"rss_only",
+                                        "spring_model",
+                                        "sdp",
+                                        "mds_metric",
+                                        "mds_non_metric",
+                                        "sdp_init_spring"}
+                RSS only performs naive pair-wise distance estimation.
+                Spring model performs distributed stress majorization.
+                SDP performs convex optimization of the relaxed semi-definite program.
+                MDS Metric performs stress majorization of the metric multidimensional scaling problem.
+                MDS Non-metrics performs stress majorization of the non-metric multidimensional scaling problem.
+                SDP-initialized spring model uses the output of SDP as the input of the spring model.
         estimate_distance_params (4-tuple float): (d_ref, power_ref, path_loss_exp, stdev_power)
                 These specify the parameters for calculating a distance estimate
                 based on RSS, they are used in all models.
@@ -45,7 +54,8 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
                 of devices in meters rounded to 2 decimal points, where n is the
                 total number of devices.
         estimated_locations (array): (n,2)-sized array of locations estimated by
-                the spring model. Returns None for other models.
+                the spring model. Returns None for the RSS only model.
+        time_elapsed (float): time spent calculating solution
 
     '''
 
@@ -63,32 +73,71 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
     epsilon = spring_model_params[2]
     show_visualization = spring_model_params[3]
 
-    if use_model == "rss_only":
-        distance_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
-        # zero out the diagonal
-        distance_matrix = distance_matrix - np.eye(n)*distance_matrix[0][0]
-        return distance_matrix, None
+    ############################################################################
 
-    elif use_model == "mds":
+    if use_model == "rss_only":
+        # asymmetric distance matrix
+        start = time.time()
+        distance_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
+        np.fill_diagonal(distance_matrix,0)
+        end = time.time()
+        return distance_matrix, None, end-start
+
+    elif use_model == "rss_pre_averaged":
+        # # pre-averaged
+        start = time.time()
+        distance_matrix = estimate_distance((rss_matrix+rss_matrix.T)/2,estimate_distance_params)[0]
+        np.fill_diagonal(distance_matrix,0)
+        end = time.time()
+        return distance_matrix, None, end-start
+
+    elif use_model == "rss_post_averaged":
+        # # post-averaged
+        start = time.time()
+        distance_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
+        distance_matrix = (distance_matrix+distance_matrix.T)/2
+        np.fill_diagonal(distance_matrix,0)
+        end = time.time()
+        return distance_matrix, None, end-start
+
+    ############################################################################
+
+    elif use_model == "mds_metric":
+        start = time.time()
         rss_matrix = (rss_matrix + rss_matrix.T)/2
         distance_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
         np.fill_diagonal(distance_matrix,0)
-        use_metric = True # set as parameter
+        use_metric = True
+        mds = manifold.MDS(n_components=2, metric=use_metric, max_iter=3000, eps=1e-12,
+                    dissimilarity="precomputed", n_jobs=1)
+        node_locs = mds.fit_transform(distance_matrix)
+        estimated_distance_matrix = distance_matrix_from_locs(node_locs)
+        end = time.time()
+        return np.round(estimated_distance_matrix,2), node_locs, end-start
+
+    elif use_model == "mds_non_metric":
+        start = time.time()
+        rss_matrix = (rss_matrix + rss_matrix.T)/2
+        distance_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
+        np.fill_diagonal(distance_matrix,0)
+        use_metric = False
         mds = manifold.MDS(n_components=2, metric=use_metric, max_iter=3000, eps=1e-12,
                     dissimilarity="precomputed", n_jobs=1)
         node_locs = mds.fit_transform(distance_matrix)
         estimated_distance_matrix = distance_matrix_from_locs(node_locs)
         # scale the data
-        argmin = np.where(distance_matrix==np.min(distance_matrix[distance_matrix>0]))[0]
-        transform = distance_matrix[argmin[0],argmin[1]]/estimated_distance_matrix[argmin[0],argmin[1]]
+        transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])
         estimated_distance_matrix = estimated_distance_matrix*transform
-        return np.round(estimated_distance_matrix,2), node_locs
+        end = time.time()
+        return np.round(estimated_distance_matrix,2), node_locs, end-start
+
+    ############################################################################
 
     elif use_model == "spring_model":
+        start = time.time()
         # start with random estimates
         estimated_locations = np.random.rand(n,2)
         previous_estimates = estimated_locations.copy()
-        start = time.time()
         for iteration in range(max_iterations):
             for i in range(n):
                 total_force = [0,0]
@@ -108,7 +157,7 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
             if epsilon:
                 converged = True
                 for i in range(n):
-                    if np.linalg.norm(previous_estimates[i] - estimated_locations[i]) > epsilon:
+                    if np.linalg.norm(previous_estimates[i] - estimated_locations[i]) >= epsilon:
                         converged = False
                 if converged:
                     print("\tconverged in:",iteration,"iterations")
@@ -118,45 +167,88 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
                 plt.pause(0.01)
                 time.sleep(0.01)
         end = time.time()
-        # print("\ttime elapsed:",end-start,"seconds")
-        return distance_matrix_from_locs(estimated_locations), estimated_locations
+        return distance_matrix_from_locs(estimated_locations), estimated_locations, end-start
+
+    ############################################################################
+
+    elif use_model == "sdp":
+        start = time.time()
+        dist_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
+        dist_dict = DistanceMatrixToDict(dist_matrix)
+        node_node_dists = dict()
+        node_anchor_dists = dict()
+        anchor_locs = dict()
+        anchor_id = n-1
+        anchor_ids = [anchor_id]
+        anchor_locs[anchor_id] = [1, 1]
+        for edge in dist_dict.keys():
+            if edge[0] in anchor_ids and edge[1] in anchor_ids:
+                continue
+            elif edge[0] in anchor_ids or edge[1] in anchor_ids:
+                node_anchor_dists[edge] = dist_dict[edge]
+            else:
+                node_node_dists[edge] = dist_dict[edge]
+        n_notanchors = n - len(anchor_ids)
+        sdp_locs = SolveSNLWithSDP(n_notanchors, node_node_dists, node_anchor_dists, anchor_locs, anchor_ids)
+        end = time.time()
+        return distance_matrix_from_locs(sdp_locs), sdp_locs, end-start
+
+    ############################################################################
+
+    elif use_model == "sdp_init_spring":
+        start = time.time()
+        dist_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
+        dist_dict = DistanceMatrixToDict(dist_matrix)
+        node_node_dists = dict()
+        node_anchor_dists = dict()
+        anchor_locs = dict()
+        anchor_id = n-1
+        anchor_ids = [anchor_id]
+        anchor_locs[anchor_id] = [1, 1]
+        for edge in dist_dict.keys():
+            if edge[0] in anchor_ids and edge[1] in anchor_ids:
+                continue
+            elif edge[0] in anchor_ids or edge[1] in anchor_ids:
+                node_anchor_dists[edge] = dist_dict[edge]
+            else:
+                node_node_dists[edge] = dist_dict[edge]
+        n_notanchors = n - len(anchor_ids)
+        sdp_locs = SolveSNLWithSDP(n_notanchors, node_node_dists, node_anchor_dists, anchor_locs, anchor_ids)
+        estimated_locations = np.array(sdp_locs)
+        previous_estimates = estimated_locations.copy()
+        for iteration in range(max_iterations):
+            for i in range(n):
+                total_force = [0,0]
+                for j in range(n):
+                    if j != i:
+                        i_to_j = np.subtract(estimated_locations[j],estimated_locations[i])
+                        dist_est = np.linalg.norm(i_to_j)
+                        dist_meas, dist_min, dist_max = estimate_distance(rss_matrix[i][j], estimate_distance_params)
+                        uncertainty = dist_max-dist_min
+                        e = (dist_est-dist_meas)
+                        # magnitude of force applied by a pair is the error in our current estimate,
+                        # weighted by how likely the RSS measurement is to be accurate
+                        force = (e/uncertainty)*(i_to_j/dist_est)
+                        total_force = np.add(total_force,force)
+                previous_estimates[i] = estimated_locations[i]
+                estimated_locations[i] = np.add(estimated_locations[i],step_size*total_force)
+            if epsilon:
+                converged = True
+                for i in range(n):
+                    if np.linalg.norm(previous_estimates[i] - estimated_locations[i]) >= epsilon:
+                        converged = False
+                if converged:
+                    print("\tconverged in:",iteration,"iterations")
+                    break
+            if show_visualization: # visualize the algorithm's progress
+                plt.scatter(estimated_locations[:,0],estimated_locations[:,1],c=list(range(n)))
+                plt.pause(0.01)
+                time.sleep(0.01)
+        end = time.time()
+        return distance_matrix_from_locs(estimated_locations), estimated_locations, end-start
+
+    ############################################################################
 
     else:
         print("use_model not defined")
         return
-
-# example usage, for testing
-if __name__ == '__main__':
-    n = 10
-    node_locs, rss_matrix = simulate_rss_matrix(n,20,params=(1.0, -45, 2.9, 4.0))
-    print("Sample RSS matrix:")
-    print(rss_matrix)
-    print("True distance matrix:")
-    true_dist_matrix = distance_matrix_from_locs(node_locs)
-    print(true_dist_matrix)
-    print("")
-    print("Estimated distance matrix (rss_only):")
-    rss_only = estimate_distance_matrix(rss_matrix,
-                                    use_model="rss_only",
-                                    estimate_distance_params=(1.0, -45, 2.9, 4.0))[0]
-    print(rss_only)
-    percent_error = np.nanmean(np.divide(abs(np.subtract(true_dist_matrix,rss_only)),true_dist_matrix+np.eye(n)))
-    print("Average percent error:",percent_error)
-    print("")
-    print("Estimated distance matrix (spring_model):")
-    spring_model = estimate_distance_matrix(rss_matrix,
-                                    use_model="spring_model",
-                                    estimate_distance_params=(1.0, -45, 2.9, 4.0),
-                                    spring_model_params=(100, 0.2, 0.1, True))[0]
-    print(spring_model)
-    percent_error = np.nanmean(np.divide(abs(np.subtract(true_dist_matrix,spring_model)),true_dist_matrix+np.eye(n)))
-    print("Average percent error:",percent_error)
-    print("")
-    print("Estimated distance matrix (MDS):")
-    mds = estimate_distance_matrix(rss_matrix,
-                                    use_model="mds",
-                                    estimate_distance_params=(1.0, -45, 2.9, 4.0))[0]
-    print(mds)
-    percent_error = np.nanmean(np.divide(abs(np.subtract(true_dist_matrix,mds)),true_dist_matrix+np.eye(n)))
-    print("Average percent error:",percent_error)
-    print("")
