@@ -1,5 +1,5 @@
 import numpy as np
-from test_estimate_distance_matrix import calculate_MPE
+from test_estimate_distance_matrix import evaluate
 from estimate_distance_matrix import distance_matrix_from_locs, estimate_distance_matrix
 
 # example usage, for testing
@@ -8,7 +8,6 @@ if __name__ == '__main__':
     # fitted from dataset
     params = (1.0, -46.123430636476016, 2.902844191159571, 3.9405315173088855, -100)
     spring_params = (100, 0.2, 0.1, False)
-    test_iterations = 10
 
     true_locs = np.array([[1.0,7.0],[14.0,3.0],[3.0,19.0],[21.0,18.0],[9.0,33.0],[22.0,3.0],[10.0,11.0],[3.0,32.0],[27.0,27.0],[20.0,12.0],[18.0,34.0]])
     true_locs = 0.3048*true_locs # convert to meters
@@ -27,23 +26,23 @@ if __name__ == '__main__':
                     [-66.488, -63.775, -66.978, -51.330, -69.295, -56.240, -63.301, -78.221, -65.041, -100, -70.042],
                     [-72.078, -80.838, -73.341, -68.369, -57.963, -76.385, -79.549, -68.691, -66.980, -73.718, -100]])
 
-    for model in ["rss_only","rss_pre_averaged","rss_post_averaged","mds_metric","mds_non_metric","sdp","spring_model","sdp_init_spring"]:
-        MPEs = []
-        STDPEs = []
-        TIMEs = []
+    print(true_dist_matrix)
 
-        for iter in range(test_iterations):
+    # for model in ["rss_only","rss_pre_averaged","rss_post_averaged","mds_metric","mds_non_metric","sdp","spring_model","sdp_init_spring"]:
+    for model in ["rss_only"]:
             dist_matrix, est_locs, time_elapsed = estimate_distance_matrix(rss_matrix,use_model=model,estimate_distance_params=params,spring_model_params=spring_params)
-            MPE, STDPE = calculate_MPE(true_dist_matrix,dist_matrix)
-            MPEs.append(MPE)
-            STDPEs.append(STDPE)
-            TIMEs.append(time_elapsed)
-            print("Mean percent error:",MPE)
-            print("Std Dev percent error:",STDPE)
-            print("Time elapsed:",time_elapsed)
-        print("Estimated distance matrix",model)
-        print(dist_matrix)
-        print("Mean percent error:",np.mean(MPEs))
-        print("Std Dev percent error:",np.mean(STDPEs))
-        print("Time elapsed:",np.mean(TIMEs))
-        print("")
+            MAE, STDAE, maxAE, MPE, STDPE, maxPE, TP, FP, TN, FN, absolute_errors, percent_errors = evaluate(true_dist_matrix,dist_matrix)
+            if True:
+                print("Mean absolute error:",MAE)
+                print("Std Dev absolute error:",STDAE)
+                print("Max absolute error:",maxAE)
+                print("Mean percent error:",MPE)
+                print("Std Dev percent error:",STDPE)
+                print("Max percent error:",maxPE)
+                print("True positive:",TP)
+                print("False positive:",FP)
+                print("True negative:",TN)
+                print("False negative:",FN)
+                print("Time elapsed:",time_elapsed)
+                print("Estimated distance matrix",model)
+                print(dist_matrix)

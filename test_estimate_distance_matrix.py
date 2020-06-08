@@ -2,14 +2,43 @@ import numpy as np
 from simulate_rss_matrix import simulate_rss_matrix
 from estimate_distance_matrix import distance_matrix_from_locs, estimate_distance_matrix
 
-def calculate_MPE(distance_matrix,estimated_distance_matrix):
+def evaluate(distance_matrix,estimated_distance_matrix):
     n = distance_matrix.shape[0]
-    percent_error = []
+    distances = []
+    estimated_distances = []
+    TP = 0
+    FP = 0
+    TN = 0
+    FN = 0
+
     for i in range(n):
         for j in range(n):
             if i < j:
-                percent_error.append(abs(distance_matrix[i][j]-estimated_distance_matrix[i][j])/distance_matrix[i][j])
-    return np.mean(percent_error), np.std(percent_error)
+                distances.append(distance_matrix[i][j])
+                estimated_distances.append(estimated_distance_matrix[i][j])
+                if distance_matrix[i][j] < 2:
+                    if estimated_distance_matrix[i][j] < 2:
+                        TP += 1
+                    else:
+                        FN +=1
+                else:
+                    if estimated_distance_matrix[i][j] < 2:
+                        FP += 1
+                    else:
+                        TN +=1
+    absolute_errors = abs(np.array(estimated_distances)-np.array(distances))
+    percent_errors = np.divide(absolute_errors,distances)
+
+    MAE = np.mean(absolute_errors)
+    STDAE = np.std(absolute_errors)
+    maxAE = np.max(absolute_errors)
+    MPE = np.mean(percent_errors)
+    STDPE = np.std(percent_errors)
+    maxPE = np.max(percent_errors)
+
+    count = (TP+FP+TN+FN)
+
+    return MAE, STDAE, maxAE, MPE, STDPE, maxPE, TP/count, FP/count, TN/count, FN/count, absolute_errors, percent_errors
 
 # example usage, for testing
 if __name__ == '__main__':
