@@ -14,6 +14,60 @@ def distance_matrix_from_locs(node_locs):
             distance_matrix[i][j] = round(np.linalg.norm(np.subtract(node_locs[i],node_locs[j])),2)
     return distance_matrix
 
+def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_distance_params,epsilon,show_visualization,initialization=None,n_init=1):
+    best_solution_matrix, best_solution_locations, best_solution_stress = None, None, 10000
+    start = time.time()
+    for random_initialization in range(n_init):
+        print("initialize spring model")
+        # start with random estimates
+        if initialization is not None:
+            estimated_locations = initialization
+        else:
+            estimated_locations = np.random.rand(n,2)*10
+        previous_estimates = estimated_locations.copy()
+        for iteration in range(max_iterations):
+            sum_all_forces = 0
+            for i in range(n):
+                total_force = [0,0]
+                for j in range(n):
+                    if j != i:
+                        # remove "or True" to ignore rss values at the threshold
+                        if rss_matrix[i][j] > threshold or True:
+                            i_to_j = np.subtract(estimated_locations[j],estimated_locations[i])
+                            dist_est = np.linalg.norm(i_to_j)
+                            dist_meas, dist_min, dist_max = estimate_distance(rss_matrix[i][j], estimate_distance_params)
+                            uncertainty = dist_max-dist_min
+                            e = (dist_est-dist_meas)
+                            # magnitude of force applied by a pair is the error in our current estimate,
+                            # weighted by how likely the RSS measurement is to be accurate
+                            if dist_est > 0:
+                                force = (e/uncertainty)*(i_to_j/dist_est)
+                                total_force = np.add(total_force,force)
+                previous_estimates[i] = estimated_locations[i]
+                estimated_locations[i] = np.add(estimated_locations[i],step_size*total_force)
+                sum_all_forces += np.linalg.norm(total_force)
+            if epsilon:
+                converged = True
+                for i in range(n):
+                    if np.linalg.norm(previous_estimates[i] - estimated_locations[i]) >= epsilon:
+                        converged = False
+                if converged:
+                    print("\tconverged in:",iteration,"iterations")
+                    break
+            if show_visualization: # visualize the algorithm's progress
+                plt.scatter(estimated_locations[:,0],estimated_locations[:,1],c=list(range(n)))
+                plt.pause(0.01)
+                time.sleep(0.01)
+        final_stress = sum_all_forces
+        estimated_distance_matrix = distance_matrix_from_locs(estimated_locations)
+        if final_stress < best_solution_stress:
+            best_solution_matrix = estimated_distance_matrix
+            best_solution_locations = estimated_locations
+            best_solution_stress = final_stress
+    end = time.time()
+    return best_solution_matrix, best_solution_locations, end-start
+
+
 def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_distance_params=None,spring_model_params=None):
     '''
     This function estimates a matrix of distances (m) given a matrix of Radio
@@ -43,12 +97,13 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
                 path_loss_exp: path loss exponent
                 stdev_power: standard deviation of received Power in dB
                 threshold: signals below this value cannot be received
-        spring_model_params (4-tuple): (max_iterations, step_size, epsilon, show_visualization)
+        spring_model_params (5-tuple): (max_iterations, step_size, epsilon, show_visualization, n_init)
                 max_iterations (int): how many iterations to run the algorithm
                 step_size (float): step size used in gradient descent
                 epsilon (float): If given, threshold for stopping the algorithm (convergence).
                                 If none, run algorithm for max_iterations.
                 show_visualization (bool): If true, plot location estimates at each iteration.
+                n_init (int): number of random initializations to start the algorithm with
 
     Returns:
         distance_matrix (array): (n,n)-sized array giving distance between pairs
@@ -69,12 +124,13 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
     estimate_distance_params = estimate_distance_params[:4]
 
     if spring_model_params is None:
-        spring_model_params = (5*n, 0.2, 0.1, False)
+        spring_model_params = (5*n, 0.2, 0.1, False, 1)
 
     max_iterations = spring_model_params[0]
     step_size = spring_model_params[1]
     epsilon = spring_model_params[2]
     show_visualization = spring_model_params[3]
+    n_init = spring_model_params[4]
 
     ############################################################################
 
@@ -112,7 +168,7 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         np.fill_diagonal(distance_matrix,0)
         use_metric = True
         mds = manifold.MDS(n_components=2, metric=use_metric, max_iter=3000, eps=1e-12,
-                    dissimilarity="precomputed", n_jobs=1)
+                    dissimilarity="precomputed", n_jobs=1, n_init=n_init)
         node_locs = mds.fit_transform(distance_matrix)
         estimated_distance_matrix = distance_matrix_from_locs(node_locs)
         end = time.time()
@@ -127,7 +183,7 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         # distance_matrix[np.where(rss_matrix==threshold)] = 0
         use_metric = False
         mds = manifold.MDS(n_components=2, metric=use_metric, max_iter=3000, eps=1e-12,
-                    dissimilarity="precomputed", n_jobs=1)
+                    dissimilarity="precomputed", n_jobs=1, n_init=n_init)
         node_locs = mds.fit_transform(distance_matrix)
         estimated_distance_matrix = distance_matrix_from_locs(node_locs)
         # scale the data
@@ -139,43 +195,7 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
     ############################################################################
 
     elif use_model == "spring_model":
-        start = time.time()
-        # start with random estimates
-        estimated_locations = np.random.rand(n,2)*10
-        previous_estimates = estimated_locations.copy()
-        for iteration in range(max_iterations):
-            for i in range(n):
-                total_force = [0,0]
-                for j in range(n):
-                    if j != i:
-                        # remove "or True" to ignore rss values at the threshold
-                        if rss_matrix[i][j] > threshold or True:
-                            i_to_j = np.subtract(estimated_locations[j],estimated_locations[i])
-                            dist_est = np.linalg.norm(i_to_j)
-                            dist_meas, dist_min, dist_max = estimate_distance(rss_matrix[i][j], estimate_distance_params)
-                            uncertainty = dist_max-dist_min
-                            e = (dist_est-dist_meas)
-                            # magnitude of force applied by a pair is the error in our current estimate,
-                            # weighted by how likely the RSS measurement is to be accurate
-                            if dist_est > 0:
-                                force = (e/uncertainty)*(i_to_j/dist_est)
-                                total_force = np.add(total_force,force)
-                previous_estimates[i] = estimated_locations[i]
-                estimated_locations[i] = np.add(estimated_locations[i],step_size*total_force)
-            if epsilon:
-                converged = True
-                for i in range(n):
-                    if np.linalg.norm(previous_estimates[i] - estimated_locations[i]) >= epsilon:
-                        converged = False
-                if converged:
-                    print("\tconverged in:",iteration,"iterations")
-                    break
-            if show_visualization: # visualize the algorithm's progress
-                plt.scatter(estimated_locations[:,0],estimated_locations[:,1],c=list(range(n)))
-                plt.pause(0.01)
-                time.sleep(0.01)
-        end = time.time()
-        return distance_matrix_from_locs(estimated_locations), estimated_locations, end-start
+        return solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_distance_params,epsilon,show_visualization,initialization=None,n_init=n_init)
 
     ############################################################################
 
@@ -238,41 +258,7 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
                 node_node_dists[edge] = dist_dict[edge]
         n_notanchors = n - len(anchor_ids)
         sdp_locs = SolveSNLWithSDP(n_notanchors, node_node_dists, node_anchor_dists, anchor_locs, anchor_ids)
-        estimated_locations = np.array(sdp_locs)
-        previous_estimates = estimated_locations.copy()
-        for iteration in range(max_iterations):
-            for i in range(n):
-                total_force = [0,0]
-                for j in range(n):
-                    if j != i:
-                        # remove "or True" to ignore rss values at the threshold
-                        if rss_matrix[i][j] > threshold or True:
-                            i_to_j = np.subtract(estimated_locations[j],estimated_locations[i])
-                            dist_est = np.linalg.norm(i_to_j)
-                            dist_meas, dist_min, dist_max = estimate_distance(rss_matrix[i][j], estimate_distance_params)
-                            uncertainty = dist_max-dist_min
-                            e = (dist_est-dist_meas)
-                            # magnitude of force applied by a pair is the error in our current estimate,
-                            # weighted by how likely the RSS measurement is to be accurate
-                            if dist_est > 0:
-                                force = (e/uncertainty)*(i_to_j/dist_est)
-                                total_force = np.add(total_force,force)
-                previous_estimates[i] = estimated_locations[i]
-                estimated_locations[i] = np.add(estimated_locations[i],step_size*total_force)
-            if epsilon:
-                converged = True
-                for i in range(n):
-                    if np.linalg.norm(previous_estimates[i] - estimated_locations[i]) >= epsilon:
-                        converged = False
-                if converged:
-                    print("\tconverged in:",iteration,"iterations")
-                    break
-            if show_visualization: # visualize the algorithm's progress
-                plt.scatter(estimated_locations[:,0],estimated_locations[:,1],c=list(range(n)))
-                plt.pause(0.01)
-                time.sleep(0.01)
-        end = time.time()
-        return distance_matrix_from_locs(estimated_locations), estimated_locations, end-start
+        return solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_distance_params,epsilon,show_visualization,initialization=np.array(sdp_locs),n_init=1)
 
     ############################################################################
 

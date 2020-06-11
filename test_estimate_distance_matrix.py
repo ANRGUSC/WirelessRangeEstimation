@@ -43,10 +43,10 @@ def evaluate(distance_matrix,estimated_distance_matrix):
 # example usage, for testing
 if __name__ == '__main__':
     n = 10
-    params = (1.0, -45, 2.9, 8.0,-75)
+    params = (1.0, -45, 2.9, 8.0,-95)
     thresh = params[4]
     area_side = 30
-    spring_params = (300, 0.4, 0.05, False)
+    spring_params = (300, 0.4, 0.05, False, 10)
     test_iterations = 1
     write_heading = False
     write = False
@@ -75,7 +75,7 @@ if __name__ == '__main__':
                     print(true_dist_matrix)
                     print("")
                 dist_matrix, est_locs, time_elapsed = estimate_distance_matrix(rss_matrix,use_model=model,estimate_distance_params=params,spring_model_params=spring_params)
-                MPE, STDPE = calculate_MPE(true_dist_matrix,dist_matrix)
+                MAE, STDAE, maxAE, MPE, STDPE, maxPE, TP, FP, TN, FN, absolute_errors, percent_errors = evaluate(true_dist_matrix,dist_matrix)
                 MPEs.append(MPE)
                 STDPEs.append(STDPE)
                 TIMEs.append(time_elapsed)

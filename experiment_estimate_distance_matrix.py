@@ -7,7 +7,7 @@ if __name__ == '__main__':
     n = 11
     # fitted from dataset
     params = (1.0, -46.123430636476016, 2.902844191159571, 3.9405315173088855, -100)
-    spring_params = (100, 0.2, 0.1, False)
+    spring_params = (100, 0.2, 0.1, False, 10)
 
     true_locs = np.array([[1.0,7.0],[14.0,3.0],[3.0,19.0],[21.0,18.0],[9.0,33.0],[22.0,3.0],[10.0,11.0],[3.0,32.0],[27.0,27.0],[20.0,12.0],[18.0,34.0]])
     true_locs = 0.3048*true_locs # convert to meters
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     print(true_dist_matrix)
 
     # for model in ["rss_only","rss_pre_averaged","rss_post_averaged","mds_metric","mds_non_metric","sdp","spring_model","sdp_init_spring"]:
-    for model in ["rss_only"]:
+    for model in ["sdp","spring_model","sdp_init_spring"]:
             dist_matrix, est_locs, time_elapsed = estimate_distance_matrix(rss_matrix,use_model=model,estimate_distance_params=params,spring_model_params=spring_params)
             MAE, STDAE, maxAE, MPE, STDPE, maxPE, TP, FP, TN, FN, absolute_errors, percent_errors = evaluate(true_dist_matrix,dist_matrix)
             if True:
