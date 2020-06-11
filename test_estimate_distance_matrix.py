@@ -57,7 +57,7 @@ if __name__ == '__main__':
             fd.write("model,MPEave,MPEbest,MPEworst,STDPEave,STDPEbest,STDPEworst,TIME,n,d_ref,power_ref,path_loss_exp,stdev_power,area,threshold,max_iterations,step_size,epsilon")
             fd.write("\n")
 
-        for model in ["rss_only","rss_pre_averaged","rss_post_averaged","mds_metric","mds_non_metric","sdp","spring_model","sdp_init_spring"]:
+        for model in ["rss_only","rss_pre_averaged","rss_post_averaged","mds_metric","mds_non_metric","sdp","spring_model","sdp_init_spring","lle","isomap"]:
         # algorithms which can handle missing measurements
         # for model in ["mds_non_metric","sdp","spring_model","sdp_init_spring"]:
             MPEs = []

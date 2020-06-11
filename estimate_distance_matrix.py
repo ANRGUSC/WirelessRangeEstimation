@@ -18,7 +18,6 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
     best_solution_matrix, best_solution_locations, best_solution_stress = None, None, 10000
     start = time.time()
     for random_initialization in range(n_init):
-        print("initialize spring model")
         # start with random estimates
         if initialization is not None:
             estimated_locations = initialization
@@ -52,7 +51,7 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
                     if np.linalg.norm(previous_estimates[i] - estimated_locations[i]) >= epsilon:
                         converged = False
                 if converged:
-                    print("\tconverged in:",iteration,"iterations")
+                    # print("\tconverged in:",iteration,"iterations")
                     break
             if show_visualization: # visualize the algorithm's progress
                 plt.scatter(estimated_locations[:,0],estimated_locations[:,1],c=list(range(n)))
@@ -78,17 +77,23 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
                 between pairs of devices in dB, where n is the total number of devices.
                 rss_matrix[i,j] gives RSS at device j when device i transmits.
         use_model (string): string from {"rss_only",
+                                        "rss_pre_averaged",
+                                        "rss_post_averaged"
                                         "spring_model",
                                         "sdp",
                                         "mds_metric",
                                         "mds_non_metric",
-                                        "sdp_init_spring"}
-                RSS only performs naive pair-wise distance estimation.
+                                        "sdp_init_spring",
+                                        "lle",
+                                        "isomap"}
+                RSS only performs naive pair-wise distance estimation, with options for
+                    averaging pariwise-RSS before estimation or averaging pairwise-distance afer estimation.
                 Spring model performs distributed stress majorization.
                 SDP performs convex optimization of the relaxed semi-definite program.
-                MDS Metric performs stress majorization of the metric multidimensional scaling problem.
-                MDS Non-metrics performs stress majorization of the non-metric multidimensional scaling problem.
+                MDS performs stress majorization of the metric multidimensional scaling problem,
+                    with options for metric (quantitative) or non-metric (qualitative/ordinal).
                 SDP-initialized spring model uses the output of SDP as the input of the spring model.
+                LLE and Isomap uses manifold learning techniques optimized for non-linear mappings between RSS and distance.
         estimate_distance_params (5-tuple float): (d_ref, power_ref, path_loss_exp, stdev_power, threshold)
                 These specify the parameters for calculating a distance estimate
                 based on RSS, they are used in all models.
@@ -185,6 +190,41 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         mds = manifold.MDS(n_components=2, metric=use_metric, max_iter=3000, eps=1e-12,
                     dissimilarity="precomputed", n_jobs=1, n_init=n_init)
         node_locs = mds.fit_transform(distance_matrix)
+        estimated_distance_matrix = distance_matrix_from_locs(node_locs)
+        # scale the data
+        transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])
+        estimated_distance_matrix = estimated_distance_matrix*transform
+        end = time.time()
+        return np.round(estimated_distance_matrix,2), node_locs, end-start
+
+    ############################################################################
+
+    elif use_model == "isomap":
+        start = time.time()
+        rss_matrix = (rss_matrix + rss_matrix.T)/2
+        distance_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
+        np.fill_diagonal(distance_matrix,0)
+        isomap = manifold.Isomap(n_neighbors=n-1, n_components=2, eigen_solver='auto', tol=0,
+                                 max_iter=1000, path_method='auto', neighbors_algorithm='auto', n_jobs=None)
+        node_locs = isomap.fit_transform(distance_matrix)
+        estimated_distance_matrix = distance_matrix_from_locs(node_locs)
+        # scale the data
+        transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])
+        estimated_distance_matrix = estimated_distance_matrix*transform
+        end = time.time()
+        return np.round(estimated_distance_matrix,2), node_locs, end-start
+
+    ############################################################################
+
+    elif use_model == "lle":
+        start = time.time()
+        rss_matrix = (rss_matrix + rss_matrix.T)/2
+        distance_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
+        np.fill_diagonal(distance_matrix,0)
+        LLE = manifold.LocallyLinearEmbedding(n_neighbors=n-1, n_components=2, reg=0.001, eigen_solver='auto',
+                                                tol=1e-06, max_iter=100, method='standard', hessian_tol=0.0001, modified_tol=1e-12,
+                                                neighbors_algorithm='auto', random_state=None, n_jobs=None)
+        node_locs = LLE.fit_transform(distance_matrix)
         estimated_distance_matrix = distance_matrix_from_locs(node_locs)
         # scale the data
         transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])

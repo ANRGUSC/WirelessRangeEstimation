@@ -29,20 +29,20 @@ if __name__ == '__main__':
     print(true_dist_matrix)
 
     # for model in ["rss_only","rss_pre_averaged","rss_post_averaged","mds_metric","mds_non_metric","sdp","spring_model","sdp_init_spring"]:
-    for model in ["sdp","spring_model","sdp_init_spring"]:
+    for model in ["mds_non_metric","isomap","lle"]:
             dist_matrix, est_locs, time_elapsed = estimate_distance_matrix(rss_matrix,use_model=model,estimate_distance_params=params,spring_model_params=spring_params)
             MAE, STDAE, maxAE, MPE, STDPE, maxPE, TP, FP, TN, FN, absolute_errors, percent_errors = evaluate(true_dist_matrix,dist_matrix)
             if True:
+                print("Estimated distance matrix",model)
+                # print(dist_matrix)
                 print("Mean absolute error:",MAE)
                 print("Std Dev absolute error:",STDAE)
                 print("Max absolute error:",maxAE)
                 print("Mean percent error:",MPE)
                 print("Std Dev percent error:",STDPE)
                 print("Max percent error:",maxPE)
-                print("True positive:",TP)
-                print("False positive:",FP)
-                print("True negative:",TN)
-                print("False negative:",FN)
-                print("Time elapsed:",time_elapsed)
-                print("Estimated distance matrix",model)
-                print(dist_matrix)
+                # print("True positive:",TP)
+                # print("False positive:",FP)
+                # print("True negative:",TN)
+                # print("False negative:",FN)
+                # print("Time elapsed:",time_elapsed)
