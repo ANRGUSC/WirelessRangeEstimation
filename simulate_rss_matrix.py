@@ -25,10 +25,7 @@ def simulate_rss_matrix(num_nodes, area_side, params=None, threshold=None):
                        it returns threshold.
     """
 
-    if params is None:
-        params = (1.0, -46.123, 2.902, 3.940)
-    if threshold is None:
-        threshold = -95
+    assert(params is not None)
     # the above values are arbitrarily chosen "default values"
     # should be changed based on measurements
 
@@ -38,29 +35,35 @@ def simulate_rss_matrix(num_nodes, area_side, params=None, threshold=None):
     power_ref = params[1] # mean received power at reference distance
     path_loss_exp = params[2] # path loss exponent
     stdev_power = params[3] # standard deviation of received power
-
-
+    threshold = params[4]
 
     #initialize rss_matrix with the radio rss threshold values as default
     rss_matrix = np.full((num_nodes, num_nodes), float(round(threshold,3)))
 
-
     for i in range(num_nodes):
-        for j in range(num_nodes):
-            if i !=j :
-                dist = math.sqrt( (node_locs[i,0] - node_locs[j,0])**2 + (node_locs[i,1] - node_locs[j,1])**2)
-                rss_matrix[i,j] = power_ref - path_loss_exp*10*math.log10(dist/d_ref) + float(np.random.normal(0, stdev_power, 1)) #lognormal model
-                rss_matrix[i,j] = max(rss_matrix[i,j], threshold) #caps minimum
-                rss_matrix[i,j] = round(rss_matrix[i][j],2)
-
+        for j in range(i+1, num_nodes):
+            dist = math.sqrt( (node_locs[i,0] - node_locs[j,0])**2 + (node_locs[i,1] - node_locs[j,1])**2)
+            rss_base = power_ref-path_loss_exp*10*math.log10(dist/d_ref)
+            noise_1 = float(np.random.normal(0, stdev_power, 1))
+            noise_2 = float(np.random.normal(0, stdev_power, 1))
+            meas_1 = rss_base+noise_1
+            meas_1 = max(meas_1, threshold)
+            meas_2 = rss_base+noise_2
+            meas_2 = max(meas_2, threshold)
+            rss_matrix[i,j] = round(meas_1,2)
+            rss_matrix[j,i] = round(meas_2,2)
 
     return (node_locs, rss_matrix)
 
 
 ## uncomment the following to test the function out
 # if __name__ == '__main__':
-#     nl, rm = simulate_rss_matrix(4, 100)
-#     print("Node locations array")
-#     print(nl)
+#     num_nodes = 10000
+#     np.random.seed(99999)
+#     ble_params = (1.0, -46.123, 2.902, 3.940)
+#     side_length = 20
+#     nl, rm = simulate_rss_matrix(num_nodes, side_length, ble_params)
+#     # print("Node locations array")
+#     # print(nl)
 #     print("RSS Matrix")
 #     print(rm)

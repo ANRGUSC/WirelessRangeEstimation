@@ -1,0 +1,39 @@
+{
+    "snl_approaches": [
+        "rss_only",
+        "rss_post_averaged",
+        "spring_model",
+        "mds_metric",
+        "mds_non_metric",
+        "sdp",
+        "sdp_init_spring"
+    ],
+    "ble_params": [
+        1.0,
+        -46.123,
+        2.902,
+        3.94,
+        -95
+    ],
+    "pos_contact_thresh": 2,
+    "data_dir": "./simulated_data/",
+    "collection_dir": "./simulated_data/collection/",
+    "num_nodes_list": [
+        10,
+        50,
+        100,
+        200,
+        500,
+        1000
+    ],
+    "area_lengths": [
+        5,
+        10,
+        15,
+        20,
+        30,
+        40,
+        50
+    ],
+    "num_repeats": 10
+}

@@ -21,10 +21,9 @@ def estimate_distance(power_received, params=None):
             respectively, in meters rounded to two decimal points
     """
 
-    if params is None:
-        params = (1.0, -55.0, 2.0, 2.5)
-          # the above values are arbitrarily chosen "default values"
-          # should be changed based on measurements
+    assert(params is not None)
+    # the above values are arbitrarily chosen "default values"
+    # should be changed based on measurements
 
     d_ref = params[0] # reference distance
     power_ref = params[1] # mean received power at reference distance
