@@ -47,7 +47,7 @@ def SimulateRssTrial(num_nodes, area_len, iteration, data_dir, ble_params):
     if not os.path.isdir(data_dir):
         os.mkdir(data_dir)
 
-    filepath = "%dnodes_%dlen_trial%d.xlsx"%(num_nodes, area_len, iteration)
+    filepath = data_dir+"/%dnodes_%dlen_trial%d.xlsx"%(num_nodes, area_len, iteration)
     writer = pd.ExcelWriter(filepath, engine='xlsxwriter')
 
     node_locs, rss_mat = simulate_rss_matrix(num_nodes, area_len, params=ble_params)
