@@ -9,8 +9,7 @@ import numpy as np
 import pandas as pd
 import multiprocessing
 from openpyxl import load_workbook
-import matplotlib.pyplot as plt
-import matplotlib
+# import matplotlib.pyplot as plt
 from scipy.special import ndtr
 
 def GetConfusionInfo(true_dist_upper, est_dist_upper, threshold):

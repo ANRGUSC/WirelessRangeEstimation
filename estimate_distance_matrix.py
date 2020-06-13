@@ -1,6 +1,6 @@
 import numpy as np
 import time
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from sklearn import manifold
 from estimate_distance import estimate_distance
 from simulate_rss_matrix import simulate_rss_matrix

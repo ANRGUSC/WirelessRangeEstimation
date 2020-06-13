@@ -2,7 +2,7 @@
     "snl_approaches": [
         "rss_only",
         "rss_pre_averaged",
-        "rss_post_averaged"
+        "rss_post_averaged",
         "spring_model",
         "sdp",
         "mds_metric",
@@ -15,7 +15,7 @@
         100,
         0.2,
         0.1,
-        False,
+        0,
         1
     ],
     "ble_params": [
