@@ -118,7 +118,10 @@ def GatherAllTrials(data_dir, collection_dir):
     pool.join()
 
 def TestSNLApproaches(filepath, approaches, ble_params, dist_thresholds):
-    log_path = filepath[:-5] + ".log"
+    with open('sim_data_params.json') as f:
+        sim_data_params = json.load(f)
+    spring_model_params = sim_data_params["spring_params"]
+    n_init = spring_model_params[4]
 
     # Read matrix from .xlsx and convert to numpy array
     rss_mat = pd.read_excel(filepath, sheet_name="rss_data", index_col=0).to_numpy()
@@ -137,21 +140,26 @@ def TestSNLApproaches(filepath, approaches, ble_params, dist_thresholds):
     # Run all trials and save results to .xslx file
     runtimes = {}
     for approach in approaches:
-        est_dist_arr, est_locs, timing = estimate_distance_matrix(rss_mat, use_model=approach, estimate_distance_params=ble_params)
+        if approach == "spring_model":
+            app_name = "spring_model_%dinits"%(n_init)
+        else:
+            app_name = approach
+
+        est_dist_arr, est_locs, timing = estimate_distance_matrix(rss_mat, use_model=approach, estimate_distance_params=ble_params, spring_model_params=spring_model_params)
         assert(true_dist_arr.shape == est_dist_arr.shape)
 
         # Clean out previous recordings
         for sheet in writer.book.sheetnames:
-            if approach+"_dist" in sheet or approach+"_locs" in sheet or "runtimes" in sheet:
+            if app_name+"_dist" in sheet or app_name+"_locs" in sheet or "runtimes" in sheet:
                 tag = writer.book.get_sheet_by_name(sheet)
                 book.remove_sheet(tag)
 
-        runtimes[approach] = timing
+        runtimes[app_name] = timing
         est_dist_df = pd.DataFrame(est_dist_arr)
-        est_dist_df.to_excel(writer, sheet_name = approach+"_dist")
+        est_dist_df.to_excel(writer, sheet_name = app_name+"_dist")
         if est_locs is not None:
             est_locs_df = pd.DataFrame(est_locs)
-            est_locs_df.to_excel(writer, sheet_name = approach+"_locs")
+            est_locs_df.to_excel(writer, sheet_name = app_name+"_locs")
 
     runtime_df = pd.DataFrame(runtimes, index=[0])
     runtime_df.to_excel(writer, sheet_name = "runtimes")
@@ -435,7 +443,7 @@ if __name__ == '__main__':
     collection_dir = sim_data_params['collection_dir']
     num_nodes_list = sim_data_params['num_nodes_list']
     area_lengths = sim_data_params['area_lengths']
-    num_repeats = sim_data_params['num_repeats']
+    num_repeats = sim_data_params['num_repeat_settings']
 
     assert(os.path.isdir(data_dir))
 

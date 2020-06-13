@@ -87,7 +87,6 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
                                         "lle",
                                         "isomap"}
                 RSS only performs naive pair-wise distance estimation, with options for
-                    averaging pariwise-RSS before estimation or averaging pairwise-distance afer estimation.
                 Spring model performs distributed stress majorization.
                 SDP performs convex optimization of the relaxed semi-definite program.
                 MDS performs stress majorization of the metric multidimensional scaling problem,
@@ -121,16 +120,19 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
     '''
 
     # number of devices
+    assert(rss_matrix.shape[0] == rss_matrix.shape[1])
     n = rss_matrix.shape[0]
 
+    with open('sim_data_params.json') as f:
+        sim_data_params = json.load(f)
+
     if estimate_distance_params is None:
-        estimate_distance_params = (1.0, -46.123, 2.902, 3.940, -95)
+        estimate_distance_params = sim_data_params["ble_params"]
     threshold = estimate_distance_params[4]
     estimate_distance_params = estimate_distance_params[:4]
 
     if spring_model_params is None:
-        spring_model_params = (5*n, 0.2, 0.1, False, 1)
-
+        spring_model_params = sim_data_params["spring_params"]
     max_iterations = spring_model_params[0]
     step_size = spring_model_params[1]
     epsilon = spring_model_params[2]
@@ -185,7 +187,7 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         distance_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
         np.fill_diagonal(distance_matrix,0)
         # uncomment to ignore rss values at the threshold
-        # distance_matrix[np.where(rss_matrix==threshold)] = 0
+        distance_matrix[np.where(rss_matrix==threshold)] = 0
         use_metric = False
         mds = manifold.MDS(n_components=2, metric=use_metric, max_iter=3000, eps=1e-12,
                     dissimilarity="precomputed", n_jobs=1, n_init=n_init)
@@ -244,13 +246,13 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         dist_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
         dist_dict = DistanceMatrixToDict(dist_matrix)
         # uncomment to ignore rss values at the threshold
-        # dist_dict = dict()
-        # for i in range(n):
-        #     for j in range(i+1,n):
-        #         edge = (i,j)
-        #         if rss_matrix[i,j] > threshold:
-        #             dist = dist_matrix[i,j]
-        #             dist_dict[edge] = dist
+        dist_dict = dict()
+        for i in range(n):
+            for j in range(i+1,n):
+                edge = (i,j)
+                if rss_matrix[i,j] > threshold:
+                    dist = dist_matrix[i,j]
+                    dist_dict[edge] = dist
         node_node_dists = dict()
         node_anchor_dists = dict()
         anchor_locs = dict()
@@ -276,13 +278,13 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         dist_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
         dist_dict = DistanceMatrixToDict(dist_matrix)
         # uncomment to ignore rss values at the threshold
-        # dist_dict = dict()
-        # for i in range(n):
-        #     for j in range(i+1,n):
-        #         edge = (i,j)
-        #         if rss_matrix[i,j] > threshold:
-        #             dist = dist_matrix[i,j]
-        #             dist_dict[edge] = dist
+        dist_dict = dict()
+        for i in range(n):
+            for j in range(i+1,n):
+                edge = (i,j)
+                if rss_matrix[i,j] > threshold:
+                    dist = dist_matrix[i,j]
+                    dist_dict[edge] = dist
         node_node_dists = dict()
         node_anchor_dists = dict()
         anchor_locs = dict()
