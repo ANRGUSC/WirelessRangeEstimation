@@ -34,7 +34,7 @@ ehthumbs.db
 # Data #
 #############
 # simulated_data/
-# *.xlsx
+*.xlsx
 *.log
 
 

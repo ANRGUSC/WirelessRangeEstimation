@@ -466,7 +466,7 @@ if __name__ == '__main__':
         for num_nodes in num_nodes_list:
             for area_len in area_lengths:
                 for i in range(num_repeats):
-                    SimulateRssTrial(num_nodes, area_len, i, data_dir, ble_params)
+                    # SimulateRssTrial(num_nodes, area_len, i, data_dir, ble_params)
                     pool.apply_async(SimulateRssTrial, args = (num_nodes, area_len, i, data_dir, ble_params))
         pool.close()
         pool.join()
