@@ -265,6 +265,48 @@ def MakeSettingPlots(filepath, approaches):
     plt.close()
 
 
+    # Max Percent Error
+    # Box-Whiskers
+    my_fig, ax = plt.subplots()
+    boxplot = max_percent_err_df.boxplot(grid=False)
+    figure = plt.gcf() # get current figure
+    plt.title("Max Percent Error")
+    plt.ylabel("meters")
+    figure.set_size_inches(15, 6)
+    my_fig.savefig(dir_name+setting+"_max_percent_err.png", format="png")
+    plt.close()
+
+    # Max Percent Error
+    # PDF
+    max_percent_err_df.plot.kde(ind=1000)
+    figure = plt.gcf() # get current figure
+    plt.title("PDF of Max Error")
+    plt.xlabel("meters")
+    plt.xlim(0)
+    figure.savefig(dir_name+setting+"_max_percent_err_pdf.png", format="png")
+    plt.close()
+
+
+    # Max Percent Error
+    # CDF
+    max_percent_err_df = max_percent_err_df.transform(np.sort)
+    max_percent_err = max_percent_err_df.max().max()
+    offset = 5  # arbitrary buffer
+    cols = list(max_percent_err_df)
+    xAE = np.linspace(.0, max_percent_err+offset, 100)
+    for col in cols:
+        errors = max_percent_err_df[col].to_numpy()
+        pdeAE_cdf = ndtr(np.subtract.outer(xAE, errors)).mean(axis=1)
+        plt.plot(xAE, pdeAE_cdf,label=col)
+    plt.xlim(0, max_percent_err+offset)
+    plt.title("CDF of Max Error")
+    plt.xlabel("meters")
+    plt.legend()
+    figure = plt.gcf() # get current figure
+    figure.savefig(dir_name+setting+"_max_percent_err_cdf.png", format="png")
+    plt.close()
+
+
     # Avg Error
     # Box-Whiskers
     my_fig, ax = plt.subplots()
@@ -304,6 +346,48 @@ def MakeSettingPlots(filepath, approaches):
     plt.legend()
     figure = plt.gcf() # get current figure
     figure.savefig(dir_name+setting+"_avg_err_cdf.png", format="png")
+    plt.close()
+
+
+    # Avg Percent Error
+    # Box-Whiskers
+    my_fig, ax = plt.subplots()
+    boxplot = avg_percent_err_df.boxplot(grid=False)
+    figure = plt.gcf() # get current figure
+    plt.title("Avg. Error")
+    plt.ylabel("meters")
+    figure.set_size_inches(15, 6)
+    my_fig.savefig(dir_name+setting+"_avg_percent_error.png", format="png")
+    plt.close()
+
+    # Avg Percent Error
+    # PDF
+    avg_percent_err_df.plot.kde(ind=1000)
+    figure = plt.gcf() # get current figure
+    plt.title("PDF of Avg Error")
+    plt.xlabel("meters")
+    plt.xlim(0)
+    figure.savefig(dir_name+setting+"_avg_percent_err_pdf.png", format="png")
+    plt.close()
+
+
+    # Avg Percent Error
+    # CDF
+    avg_percent_err_df = avg_percent_err_df.transform(np.sort)
+    avg_percent_err_max = avg_percent_err_df.max().max()
+    offset = 5  # arbitrary buffer
+    cols = list(avg_percent_err_df)
+    xAE = np.linspace(.0, avg_percent_err_max+offset, 100)
+    for col in cols:
+        errors = avg_percent_err_df[col].to_numpy()
+        pdeAE_cdf = ndtr(np.subtract.outer(xAE, errors)).mean(axis=1)
+        plt.plot(xAE, pdeAE_cdf,label=col)
+    plt.xlim(0, avg_percent_err_max+offset)
+    plt.title("CDF of Avg Error")
+    plt.xlabel("meters")
+    plt.legend()
+    figure = plt.gcf() # get current figure
+    figure.savefig(dir_name+setting+"_avg_percent_err_cdf.png", format="png")
     plt.close()
 
 
