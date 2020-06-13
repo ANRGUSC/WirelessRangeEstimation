@@ -466,7 +466,7 @@ if __name__ == '__main__':
         for num_nodes in num_nodes_list:
             for area_len in area_lengths:
                 for i in range(num_repeats):
-                    # SimulateRssTrial(num_nodes, area_len, i, data_dir)
+                    SimulateRssTrial(num_nodes, area_len, i, data_dir, ble_params)
                     pool.apply_async(SimulateRssTrial, args = (num_nodes, area_len, i, data_dir, ble_params))
         pool.close()
         pool.join()
@@ -501,12 +501,12 @@ if __name__ == '__main__':
     elif mode == 'make_plots':
         files = [collection_dir+item for item in os.listdir(collection_dir) if "collection.xlsx" in item]
         nproc = multiprocessing.cpu_count()
-        # pool = multiprocessing.Pool(nproc-2)
+        pool = multiprocessing.Pool(nproc-2)
         for f_path in files:
-            MakeSettingPlots(f_path, snl_approaches)
-            # pool.apply_async(MakeSettingPlots, args = (f_path, snl_approaches))
-        # pool.close()
-        # pool.join()
+            # MakeSettingPlots(f_path, snl_approaches)
+            pool.apply_async(MakeSettingPlots, args = (f_path, snl_approaches))
+        pool.close()
+        pool.join()
 
 
 
