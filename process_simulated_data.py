@@ -116,7 +116,7 @@ def GatherAllTrials(data_dir, collection_dir):
     pool.close()
     pool.join()
 
-def TestSNLApproaches(filepath, approaches, ble_params, dist_thresholds):
+def TestSNLApproaches(filepath, approaches, ble_params):
     with open('sim_data_params.json') as f:
         sim_data_params = json.load(f)
     spring_model_params = sim_data_params["spring_params"]
