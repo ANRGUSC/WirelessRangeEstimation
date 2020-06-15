@@ -117,6 +117,7 @@ def GatherAllTrials(data_dir, collection_dir):
     pool.join()
 
 def TestSNLApproaches(filepath, approaches, ble_params):
+    print("Starting with:", filepath)
     with open('sim_data_params.json') as f:
         sim_data_params = json.load(f)
     spring_model_params = sim_data_params["spring_params"]
@@ -474,11 +475,13 @@ if __name__ == '__main__':
     # #Perform SNL Techniques
     elif mode == 'perform_snl':
         files = [data_dir+item for item in os.listdir(data_dir) if ".xlsx" in item]
+        files.sort(key=lambda file: int(file[file.index("_data/")+6:file.index("nodes")]))
+        print(files)
         nproc = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(nproc-2)
         for f_path in files:
-            # TestSNLApproaches(f_path, snl_approaches, ble_params)
-            pool.apply_async(TestSNLApproaches, args = (f_path, snl_approaches, ble_params))
+            TestSNLApproaches(f_path, snl_approaches, ble_params)
+            # pool.apply_async(TestSNLApproaches, args = (f_path, snl_approaches, ble_params))
         pool.close()
         pool.join()
 
