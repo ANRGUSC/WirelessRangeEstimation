@@ -14,7 +14,7 @@ from scipy.special import ndtr
 
 def GetNodeNumFromFilepath(fpath):
     temp = fpath[fpath.index("_data/")+6:fpath.index("nodes_")]
-    return temp
+    return int(temp)
 
 def GetConfusionInfo(true_dist_upper, est_dist_upper, threshold):
     pos_locs = np.argwhere(true_dist_upper < threshold)
