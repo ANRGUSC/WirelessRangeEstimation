@@ -121,6 +121,7 @@ def GatherAllTrials(data_dir, collection_dir):
     pool.join()
 
 def TestSNLApproaches(filepath, approaches, ble_params):
+    start = time.time()
     num_nodes = GetNodeNumFromFilepath(filepath)
     large_data = num_nodes > 100
     with open('sim_data_params.json') as f:
@@ -173,7 +174,8 @@ def TestSNLApproaches(filepath, approaches, ble_params):
     runtime_df.to_excel(writer, sheet_name = "runtimes")
     writer.save()
     writer.close()
-    print("Wrote data to:", filepath)
+    end = time.time()
+    print("Wrote data to:", filepath, start-end, "(sec)")
 
 def MakeSettingPlots(filepath, approaches):
     dir_name = os.path.dirname(filepath) + "/"
