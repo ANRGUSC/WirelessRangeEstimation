@@ -12,6 +12,10 @@ from openpyxl import load_workbook
 # import matplotlib.pyplot as plt
 from scipy.special import ndtr
 
+def GetNodeNumFromFilepath(fpath):
+    temp = fpath[fpath.index("_data/")+6:fpath.index("nodes_")]
+    return temp
+
 def GetConfusionInfo(true_dist_upper, est_dist_upper, threshold):
     pos_locs = np.argwhere(true_dist_upper < threshold)
     neg_locs = np.argwhere(true_dist_upper > threshold)
@@ -117,6 +121,8 @@ def GatherAllTrials(data_dir, collection_dir):
     pool.join()
 
 def TestSNLApproaches(filepath, approaches, ble_params):
+    num_nodes = GetNodeNumFromFilepath(filepath)
+    large_data = num_nodes > 100
     with open('sim_data_params.json') as f:
         sim_data_params = json.load(f)
     spring_model_params = sim_data_params["spring_params"]
@@ -139,6 +145,9 @@ def TestSNLApproaches(filepath, approaches, ble_params):
     # Run all trials and save results to .xslx file
     runtimes = {}
     for approach in approaches:
+        if large_data and "sdp" in approach:
+            continue
+
         if approach == "spring_model":
             app_name = "spring_model_%dinits"%(n_init)
         else:
