@@ -1,6 +1,7 @@
 from estimate_distance_matrix import estimate_distance_matrix
 from make_simulated_data import SimulateRssTrial
 
+import time
 import json
 import pickle
 import os
