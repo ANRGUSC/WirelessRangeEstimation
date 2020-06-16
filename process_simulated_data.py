@@ -176,7 +176,7 @@ def TestSNLApproaches(filepath, approaches, ble_params):
     writer.save()
     writer.close()
     end = time.time()
-    print("Wrote data to:", filepath, start-end, "(sec)")
+    print("Wrote data to:", filepath, end-start, "(sec)")
 
 def MakeSettingPlots(filepath, approaches):
     dir_name = os.path.dirname(filepath) + "/"
