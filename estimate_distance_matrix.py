@@ -25,11 +25,18 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
         else:
             estimated_locations = np.random.rand(n,2)*10
         previous_estimates = estimated_locations.copy()
+        keep_iterating = True
         for iteration in range(max_iterations):
+            if not keep_iterating:
+                break
             sum_all_forces = 0
             for i in range(n):
+                if not keep_iterating:
+                    break
                 total_force = [0,0]
                 for j in range(n):
+                    if not keep_iterating:
+                        break
                     if j != i:
                         # remove "or True" to ignore rss values at the threshold
                         if rss_matrix[i][j] > threshold or True:
@@ -38,6 +45,12 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
                             dist_meas, dist_min, dist_max = estimate_distance(rss_matrix[i][j], estimate_distance_params)
                             uncertainty = dist_max-dist_min
                             e = (dist_est-dist_meas)
+
+                            # Adding this to avoid huge loops over diverging systems
+                            if np.inf in i_to_j or np.inf in dist_est:
+                                keep_iterating = False
+                                break
+
                             # magnitude of force applied by a pair is the error in our current estimate,
                             # weighted by how likely the RSS measurement is to be accurate
                             if dist_est > 0:
