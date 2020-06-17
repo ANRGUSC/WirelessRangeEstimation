@@ -33,7 +33,7 @@ ehthumbs.db
 
 # Data #
 #############
-simulated_data/
+simulated_data/*
 *.xlsx
 *.log
 
