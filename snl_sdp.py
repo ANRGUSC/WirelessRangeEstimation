@@ -1,6 +1,7 @@
 import cvxpy as cp
 import numpy as np
 import scipy
+import time
 
 def GetExclusionVector(n, index):
     vec = np.zeros(n)
@@ -136,10 +137,14 @@ def SolveSNLWithSDP(num_nodes, node_node_dists, node_anchor_dists, anchor_locs, 
         # Constraint 6
         constraints += [D_jk[edge] >> 0]
 
+    start = time.time()
     obj = cp.Minimize(sum(eps_jk.values())) + cp.Minimize(sum(eps_ji.values()))
     problem = cp.Problem(obj, constraints)
-    sol = problem.solve()
+    sol = problem.solve(solver=cp.MOSEK)
+    # sol = problem.solve()
     locs = X.value.T
+    end = time.time()
+    print("SDP solved in:", np.round(end-start, 2), "(s)")
 
     anchor_loc_list = np.array([])
     keys = list(anchor_locs.keys())

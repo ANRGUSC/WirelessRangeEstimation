@@ -31,12 +31,8 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
                 break
             sum_all_forces = 0
             for i in range(n):
-                if not keep_iterating:
-                    break
                 total_force = [0,0]
                 for j in range(n):
-                    if not keep_iterating:
-                        break
                     if j != i:
                         # remove "or True" to ignore rss values at the threshold
                         if rss_matrix[i][j] > threshold or True:
@@ -47,9 +43,9 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
                             e = (dist_est-dist_meas)
 
                             # Adding this to avoid huge loops over diverging systems
-                            if np.inf in i_to_j or np.inf in dist_est:
-                                keep_iterating = False
-                                break
+                            if np.inf in i_to_j or np.inf is dist_est:
+                                print("Divergence in spring solver")
+                                continue
 
                             # magnitude of force applied by a pair is the error in our current estimate,
                             # weighted by how likely the RSS measurement is to be accurate
@@ -149,6 +145,7 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         spring_model_params = sim_data_params["spring_params"]
     max_iterations = spring_model_params[0]
     step_size = spring_model_params[1]
+    step_size = 1/float(n)
     epsilon = spring_model_params[2]
     show_visualization = spring_model_params[3]
     n_init = spring_model_params[4]

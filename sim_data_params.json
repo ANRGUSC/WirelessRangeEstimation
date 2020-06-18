@@ -29,21 +29,10 @@
     "data_dir": "./simulated_data/",
     "collection_dir": "./simulated_data/collection/",
     "num_nodes_list": [
-        10,
-        50,
-        100,
-        200,
-        500,
-        1000
-    ],
-    "area_lengths": [
-        5,
-        10,
-        15,
-        20,
-        30,
-        40,
         50
     ],
-    "num_repeat_settings": 500
+    "area_lengths": [
+        5
+    ],
+    "num_repeat_settings": 20
 }
