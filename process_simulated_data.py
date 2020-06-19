@@ -64,9 +64,11 @@ def CharacterizePerformance(filepath, approaches, threshold):
     results = []
     for approach in approaches:
         if approach == "spring_model":
-            est_dist_df = pd.read_excel(filepath, sheet_name = approach+"_%dinits_dist"%(n_init), index_col=0)
+            naming = approach+"_%dinits"%(n_init)
         else:
-            est_dist_df = pd.read_excel(filepath, sheet_name = approach+"_dist", index_col=0)
+            naming = approach
+
+        est_dist_df = pd.read_excel(filepath, sheet_name = naming+"_dist", index_col=0)
 
         est_dist_arr = est_dist_df.to_numpy()
         assert(true_dist_arr.shape == est_dist_arr.shape)
@@ -81,8 +83,8 @@ def CharacterizePerformance(filepath, approaches, threshold):
         max_error = abs_diff_upper.max()
         max_percent_error = percent_error_upper.max()
         true_pos_rate, false_pos_rate = GetConfusionInfo(true_dist_upper, est_dist_upper, threshold)
-        timing = runtime_df[approach][0]
-        results.append([approach, max_error, max_percent_error, avg_error, avg_percent_error, true_pos_rate, false_pos_rate, timing])
+        timing = runtime_df[naming][0]
+        results.append([naming, max_error, max_percent_error, avg_error, avg_percent_error, true_pos_rate, false_pos_rate, timing])
 
     perf_df = pd.DataFrame(results, columns=["estimation_technique", "max_error", "max_percent_error", "avg_error", "avg_percent_error", "true_pos_rate", "false_pos_rate", "runtime"])
 
