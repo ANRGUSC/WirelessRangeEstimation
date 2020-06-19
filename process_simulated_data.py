@@ -235,21 +235,21 @@ def MakeSettingPlots(filepath, approaches):
         false_pos_data = approach_df["false_pos_rate"].to_numpy()
         runtime_data = approach_df["runtime"].to_numpy()
         if runtime_df is None:
-            max_err_df = pd.DataFrame(max_err_data, columns=[approach])
-            max_percent_err_df = pd.DataFrame(max_percent_err_data, columns=[approach])
-            avg_err_df = pd.DataFrame(avg_err_data, columns=[approach])
-            avg_percent_err_df = pd.DataFrame(avg_percent_err_data, columns=[approach])
-            true_pos_df = pd.DataFrame(true_pos_data, columns=[approach])
-            false_pos_df = pd.DataFrame(false_pos_data, columns=[approach])
-            runtime_df = pd.DataFrame(runtime_data, columns=[approach])
+            max_err_df = pd.DataFrame(max_err_data, columns=[app_name])
+            max_percent_err_df = pd.DataFrame(max_percent_err_data, columns=[app_name])
+            avg_err_df = pd.DataFrame(avg_err_data, columns=[app_name])
+            avg_percent_err_df = pd.DataFrame(avg_percent_err_data, columns=[app_name])
+            true_pos_df = pd.DataFrame(true_pos_data, columns=[app_name])
+            false_pos_df = pd.DataFrame(false_pos_data, columns=[app_name])
+            runtime_df = pd.DataFrame(runtime_data, columns=[app_name])
         else:
-            max_err_df[approach] = max_err_data
-            max_percent_err_df[approach] = max_percent_err_data
-            avg_err_df[approach]  = avg_err_data
-            avg_percent_err_df[approach]  = avg_percent_err_data
-            true_pos_df[approach]  = true_pos_data
-            false_pos_df[approach]  = false_pos_data
-            runtime_df[approach]  = runtime_data
+            max_err_df[app_name] = max_err_data
+            max_percent_err_df[app_name] = max_percent_err_data
+            avg_err_df[app_name]  = avg_err_data
+            avg_percent_err_df[app_name]  = avg_percent_err_data
+            true_pos_df[app_name]  = true_pos_data
+            false_pos_df[app_name]  = false_pos_data
+            runtime_df[app_name]  = runtime_data
 
 
 
