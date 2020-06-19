@@ -56,20 +56,24 @@ def CharacterizePerformance(filepath, approaches, threshold):
     # extracting upper diagonal part of matrices because of symmetry
     true_dist_upper = true_dist_arr[np.triu_indices(n, k=1)]
 
+    num_nodes = GetNodeNumFromFilepath(filepath)
     with open('sim_data_params.json') as f:
         sim_data_params = json.load(f)
     spring_model_params = sim_data_params["spring_params"]
     n_init = spring_model_params[4]
+    large_data = num_nodes >= sim_data_params["large_data_thresh"]
 
     results = []
     for approach in approaches:
+
+        if large_data and "sdp" in approach:
+            continue
         if approach == "spring_model":
-            naming = approach+"_%dinits"%(n_init)
+            app_name = "spring_model_%dinits"%(n_init)
         else:
-            naming = approach
+            app_name = approach
 
-        est_dist_df = pd.read_excel(filepath, sheet_name = naming+"_dist", index_col=0)
-
+        est_dist_df = pd.read_excel(filepath, sheet_name = app_name+"_dist", index_col=0)
         est_dist_arr = est_dist_df.to_numpy()
         assert(true_dist_arr.shape == est_dist_arr.shape)
 
@@ -83,8 +87,8 @@ def CharacterizePerformance(filepath, approaches, threshold):
         max_error = abs_diff_upper.max()
         max_percent_error = percent_error_upper.max()
         true_pos_rate, false_pos_rate = GetConfusionInfo(true_dist_upper, est_dist_upper, threshold)
-        timing = runtime_df[naming][0]
-        results.append([naming, max_error, max_percent_error, avg_error, avg_percent_error, true_pos_rate, false_pos_rate, timing])
+        timing = runtime_df[app_name][0]
+        results.append([app_name, max_error, max_percent_error, avg_error, avg_percent_error, true_pos_rate, false_pos_rate, timing])
 
     perf_df = pd.DataFrame(results, columns=["estimation_technique", "max_error", "max_percent_error", "avg_error", "avg_percent_error", "true_pos_rate", "false_pos_rate", "runtime"])
 
@@ -135,11 +139,11 @@ def GatherAllTrials(data_dir, collection_dir):
 def TestSNLApproaches(filepath, approaches, ble_params):
     start = time.time()
     num_nodes = GetNodeNumFromFilepath(filepath)
-    large_data = num_nodes >= 100
     with open('sim_data_params.json') as f:
         sim_data_params = json.load(f)
     spring_model_params = sim_data_params["spring_params"]
     n_init = spring_model_params[4]
+    large_data = num_nodes >= sim_data_params["large_data_thresh"]
 
     # Read matrix from .xlsx and convert to numpy array
     rss_mat = pd.read_excel(filepath, sheet_name="rss_data", index_col=0).to_numpy()
@@ -201,12 +205,27 @@ def MakeSettingPlots(filepath, approaches):
 
     full_table.reset_index(inplace=True, drop=True)
 
+    num_nodes = GetNodeNumFromFilepath(filepath)
+    with open('sim_data_params.json') as f:
+        sim_data_params = json.load(f)
+    spring_model_params = sim_data_params["spring_params"]
+    n_init = spring_model_params[4]
+    large_data = num_nodes >= sim_data_params["large_data_thresh"]
+
     max_err_df = None
     avg_err_df = None
     true_pos_df = None
     false_pos_df = None
     runtime_df = None
     for approach in approaches:
+
+        if large_data and "sdp" in approach:
+            continue
+        if approach == "spring_model":
+            app_name = "spring_model_%dinits"%(n_init)
+        else:
+            app_name = approach
+
         approach_df = full_table.loc[full_table['estimation_technique'] == approach]
         max_err_data = approach_df["max_error"].to_numpy()
         max_percent_err_data = approach_df["max_percent_error"].to_numpy()

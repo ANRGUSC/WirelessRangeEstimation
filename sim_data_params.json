@@ -34,5 +34,6 @@
     "area_lengths": [
         5
     ],
-    "num_repeat_settings": 50
+    "num_repeat_settings": 50,
+    "large_data_thresh": 100
 }
