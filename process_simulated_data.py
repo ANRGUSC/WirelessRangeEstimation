@@ -56,9 +56,18 @@ def CharacterizePerformance(filepath, approaches, threshold):
     # extracting upper diagonal part of matrices because of symmetry
     true_dist_upper = true_dist_arr[np.triu_indices(n, k=1)]
 
+    with open('sim_data_params.json') as f:
+        sim_data_params = json.load(f)
+    spring_model_params = sim_data_params["spring_params"]
+    n_init = spring_model_params[4]
+
     results = []
     for approach in approaches:
-        est_dist_df = pd.read_excel(filepath, sheet_name = approach+"_dist", index_col=0)
+        if approach == "spring_model":
+            est_dist_df = pd.read_excel(filepath, sheet_name = approach+"_%dinits_dist"%(n_init), index_col=0)
+        else:
+            est_dist_df = pd.read_excel(filepath, sheet_name = approach+"_dist", index_col=0)
+
         est_dist_arr = est_dist_df.to_numpy()
         assert(true_dist_arr.shape == est_dist_arr.shape)
 
