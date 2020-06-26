@@ -4,7 +4,7 @@ from estimate_distance import estimate_distance
 import os
 import numpy as np
 import pandas as pd
-import multiprocessing
+import time
 
 def DistanceMatrixFromLocs(node_locs):
     n = node_locs.shape[0]
@@ -68,3 +68,13 @@ def SimulateRssTrial(num_nodes, area_len, iteration, data_dir, ble_params):
 
     print("Data written to:", filepath)
 
+
+def SimulateTrialFromTrinityData(num_nodes, area_len, iteration, input_path, output_dir):
+    start = time.time()
+    df = pd.read_csv(input_path)
+    end = time.time()
+    print(end-start)
+
+in_path = '/home/alan/ContactTracing_MDS/trinity_data/aggregate_data.csv'
+out_dir = '/home/alan/ContactTracing_MDS/simulated_trinity_data'
+SimulateTrialFromTrinityData(10, 10, 5 in_path, output_dir)
