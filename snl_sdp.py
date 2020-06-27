@@ -144,7 +144,7 @@ def SolveSNLWithSDP(num_nodes, node_node_dists, node_anchor_dists, anchor_locs, 
     # sol = problem.solve()
     locs = X.value.T
     end = time.time()
-    print("SDP solved in:", np.round(end-start, 2), "(s)")
+    # print("SDP solved in:", np.round(end-start, 2), "(s)")
 
     anchor_loc_list = np.array([])
     keys = list(anchor_locs.keys())

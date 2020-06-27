@@ -23,13 +23,15 @@
         -46.123,
         2.902,
         3.94,
-        -95
+        -105
     ],
     "pos_contact_thresh": 2,
-    "data_dir": "./simulated_data/",
-    "collection_dir": "./simulated_data/collection/",
+    "sim_data_dir": "./simulated_data/",
+    "trinity_read_dir": "./trinity_data/aggregate_data.csv",
+    "trinity_write_dir": "./simulated_trinity_data/",
+    "collection_dir": "/collection/",
     "num_nodes_list": [
-        50
+        10
     ],
     "area_lengths": [
         5

@@ -1,6 +1,7 @@
 from estimate_distance_matrix import estimate_distance_matrix
-from make_simulated_data import SimulateRssTrial
+from make_simulated_data import SimulateRssTrial, SimulateTrialsFromTrinityData
 
+import re
 import time
 import json
 import pickle
@@ -10,11 +11,20 @@ import numpy as np
 import pandas as pd
 import multiprocessing
 from openpyxl import load_workbook
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from scipy.special import ndtr
 
 def GetNodeNumFromFilepath(fpath):
     temp = fpath[fpath.index("_data/")+6:fpath.index("nodes_")]
+    temp = re.compile(r'collection/.*').search(fpath)
+    if temp is None:
+        temp = re.compile(r'_data/.*').search(fpath).group(0)
+        temp = re.compile(r'/.*nodes').search(temp).group(0)
+        temp = temp[1:-5]
+    else:
+        temp = re.compile(r'/.*nodes').search(temp.group(0)).group(0)
+        temp = temp[1:-5]
+
     return int(temp)
 
 def GetConfusionInfo(true_dist_upper, est_dist_upper, threshold):
@@ -131,10 +141,10 @@ def GatherAllTrials(data_dir, collection_dir):
     nproc = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(nproc-2)
     for setting in setting_paths.keys():
-        # CollectSettingData(setting, setting_paths[setting], collection_dir)
-        pool.apply_async(CollectSettingData, args = (setting, setting_paths[setting], collection_dir))
-    pool.close()
-    pool.join()
+        CollectSettingData(setting, setting_paths[setting], collection_dir)
+        # pool.apply_async(CollectSettingData, args = (setting, setting_paths[setting], collection_dir))
+    # pool.close()
+    # pool.join()
 
 def TestSNLApproaches(filepath, approaches, ble_params):
     start = time.time()
@@ -194,6 +204,7 @@ def TestSNLApproaches(filepath, approaches, ble_params):
     print("Wrote data to:", filepath, np.round(end-start,2), "(sec)")
 
 def MakeSettingPlots(filepath, approaches):
+    print(filepath)
     dir_name = os.path.dirname(filepath) + "/"
     file_name = os.path.basename(filepath)
     setting = file_name[:file_name.find("_collection")]
@@ -226,7 +237,7 @@ def MakeSettingPlots(filepath, approaches):
         else:
             app_name = approach
 
-        approach_df = full_table.loc[full_table['estimation_technique'] == approach]
+        approach_df = full_table.loc[full_table['estimation_technique'] == app_name]
         max_err_data = approach_df["max_error"].to_numpy()
         max_percent_err_data = approach_df["max_percent_error"].to_numpy()
         avg_err_data = approach_df["avg_error"].to_numpy()
@@ -234,6 +245,7 @@ def MakeSettingPlots(filepath, approaches):
         true_pos_data = approach_df["true_pos_rate"].to_numpy()
         false_pos_data = approach_df["false_pos_rate"].to_numpy()
         runtime_data = approach_df["runtime"].to_numpy()
+
         if runtime_df is None:
             max_err_df = pd.DataFrame(max_err_data, columns=[app_name])
             max_percent_err_df = pd.DataFrame(max_percent_err_data, columns=[app_name])
@@ -470,7 +482,7 @@ def MakeSettingPlots(filepath, approaches):
     plt.close()
 
     plt.close('all')
-    print(filepath)
+    print("Made figures for:", filepath)
 
 if __name__ == '__main__':
 
@@ -480,36 +492,59 @@ if __name__ == '__main__':
     snl_approaches = sim_data_params['snl_approaches']
     ble_params = sim_data_params['ble_params']
     pos_contact_thresh = sim_data_params['pos_contact_thresh']
-    data_dir = sim_data_params['data_dir']
+    sim_data_dir = sim_data_params['sim_data_dir']
+    trinity_read_dir = sim_data_params['trinity_read_dir']
+    trinity_write_dir = sim_data_params['trinity_write_dir']
     collection_dir = sim_data_params['collection_dir']
     num_nodes_list = sim_data_params['num_nodes_list']
     area_lengths = sim_data_params['area_lengths']
     num_repeats = sim_data_params['num_repeat_settings']
 
-    assert(os.path.isdir(data_dir))
-
-    if len(sys.argv) != 2:
-        print("Can only accept one argument\n")
-        print("Options:")
+    if len(sys.argv) != 3:
+        print("Requires two arguments\n")
+        print("(1) Options:")
         print("    generate_data")
         print("    perform_snl")
         print("    get_performance_measures")
         print("    gather_performance_data")
         print("    make_plots")
         print()
+        print("(2) Options:")
+        print("    gauss")
+        print("    trinity")
+        print()
         print()
 
-    assert (len(sys.argv) == 2)
+    assert (len(sys.argv) == 3)
     mode = sys.argv[1]
+    sim_type = sys.argv[2]
+
+    if sim_type == 'gauss':
+        data_dir = sim_data_dir
+    elif sim_type == 'trinity':
+        data_dir = trinity_write_dir
+    else:
+        raise NotImplementedError
+
+    assert(os.path.isdir(data_dir))
+    collection_path = data_dir+collection_dir
 
     if mode == 'generate_data':
         nproc = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(nproc-2)
-        for num_nodes in num_nodes_list:
-            for area_len in area_lengths:
-                for i in range(num_repeats):
-                    # SimulateRssTrial(num_nodes, area_len, i, data_dir, ble_params)
-                    pool.apply_async(SimulateRssTrial, args = (num_nodes, area_len, i, data_dir, ble_params))
+
+        if sim_type == 'gauss':
+            for num_nodes in num_nodes_list:
+                for area_len in area_lengths:
+                    for i in range(num_repeats):
+                        # SimulateRssTrial(num_nodes, area_len, i, data_dir, ble_params)
+                        pool.apply_async(SimulateRssTrial, args = (num_nodes, area_len, i, data_dir, ble_params))
+        elif sim_type == 'trinity':
+            for num_nodes in num_nodes_list:
+                for area_len in area_lengths:
+                    for i in range(num_repeats):
+                        # SimulateTrialsFromTrinityData(num_nodes, area_len, i, trinity_read_dir, trinity_write_dir)
+                        pool.apply_async(SimulateTrialsFromTrinityData, args = (num_nodes, area_len, i, trinity_read_dir, trinity_write_dir))
         pool.close()
         pool.join()
 
@@ -536,20 +571,21 @@ if __name__ == '__main__':
         pool.close()
         pool.join()
 
-    # # Get all performance data together
+    # # Get all performance data together and write into collected file
     elif mode == 'gather_performance_data':
-        GatherAllTrials(data_dir, collection_dir)
+        GatherAllTrials(data_dir, collection_path)
 
     # # Make plots of performance measures
+    # # Also group 'trial statistics' into sheets in *collection.xlsx
     elif mode == 'make_plots':
-        files = [collection_dir+item for item in os.listdir(collection_dir) if "collection.xlsx" in item]
+        files = [collection_path+item for item in os.listdir(collection_path) if "collection.xlsx" in item]
         nproc = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(nproc-2)
         for f_path in files:
-            # MakeSettingPlots(f_path, snl_approaches)
-            pool.apply_async(MakeSettingPlots, args = (f_path, snl_approaches))
-        pool.close()
-        pool.join()
+            MakeSettingPlots(f_path, snl_approaches)
+        #     pool.apply_async(MakeSettingPlots, args = (f_path, snl_approaches))
+        # pool.close()
+        # pool.join()
 
 
 
