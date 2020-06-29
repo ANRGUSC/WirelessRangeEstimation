@@ -23,27 +23,19 @@
         -46.123,
         2.902,
         3.94,
-        -95
+        -105
     ],
     "pos_contact_thresh": 2,
-    "data_dir": "./simulated_data/",
-    "collection_dir": "./simulated_data/collection/",
+    "sim_data_dir": "./simulated_data/",
+    "trinity_read_dir": "./trinity_data/aggregate_data.csv",
+    "trinity_write_dir": "./simulated_trinity_data/",
+    "collection_dir": "/collection/",
     "num_nodes_list": [
-        10,
-        50,
-        100,
-        200,
-        500,
-        1000
+        10
     ],
     "area_lengths": [
-        5,
-        10,
-        15,
-        20,
-        30,
-        40,
-        50
+        5
     ],
-    "num_repeat_settings": 500
+    "num_repeat_settings": 50,
+    "large_data_thresh": 100
 }

@@ -1,6 +1,8 @@
 from estimate_distance_matrix import estimate_distance_matrix
-from make_simulated_data import SimulateRssTrial
+from make_simulated_data import SimulateRssTrial, SimulateTrialsFromTrinityData
 
+import re
+import time
 import json
 import pickle
 import os
@@ -9,8 +11,21 @@ import numpy as np
 import pandas as pd
 import multiprocessing
 from openpyxl import load_workbook
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from scipy.special import ndtr
+
+def GetNodeNumFromFilepath(fpath):
+    temp = fpath[fpath.index("_data/")+6:fpath.index("nodes_")]
+    temp = re.compile(r'collection/.*').search(fpath)
+    if temp is None:
+        temp = re.compile(r'_data/.*').search(fpath).group(0)
+        temp = re.compile(r'/.*nodes').search(temp).group(0)
+        temp = temp[1:-5]
+    else:
+        temp = re.compile(r'/.*nodes').search(temp.group(0)).group(0)
+        temp = temp[1:-5]
+
+    return int(temp)
 
 def GetConfusionInfo(true_dist_upper, est_dist_upper, threshold):
     pos_locs = np.argwhere(true_dist_upper < threshold)
@@ -51,9 +66,24 @@ def CharacterizePerformance(filepath, approaches, threshold):
     # extracting upper diagonal part of matrices because of symmetry
     true_dist_upper = true_dist_arr[np.triu_indices(n, k=1)]
 
+    num_nodes = GetNodeNumFromFilepath(filepath)
+    with open('sim_data_params.json') as f:
+        sim_data_params = json.load(f)
+    spring_model_params = sim_data_params["spring_params"]
+    n_init = spring_model_params[4]
+    large_data = num_nodes >= sim_data_params["large_data_thresh"]
+
     results = []
     for approach in approaches:
-        est_dist_df = pd.read_excel(filepath, sheet_name = approach+"_dist", index_col=0)
+
+        if large_data and "sdp" in approach:
+            continue
+        if approach == "spring_model":
+            app_name = "spring_model_%dinits"%(n_init)
+        else:
+            app_name = approach
+
+        est_dist_df = pd.read_excel(filepath, sheet_name = app_name+"_dist", index_col=0)
         est_dist_arr = est_dist_df.to_numpy()
         assert(true_dist_arr.shape == est_dist_arr.shape)
 
@@ -67,8 +97,8 @@ def CharacterizePerformance(filepath, approaches, threshold):
         max_error = abs_diff_upper.max()
         max_percent_error = percent_error_upper.max()
         true_pos_rate, false_pos_rate = GetConfusionInfo(true_dist_upper, est_dist_upper, threshold)
-        timing = runtime_df[approach][0]
-        results.append([approach, max_error, max_percent_error, avg_error, avg_percent_error, true_pos_rate, false_pos_rate, timing])
+        timing = runtime_df[app_name][0]
+        results.append([app_name, max_error, max_percent_error, avg_error, avg_percent_error, true_pos_rate, false_pos_rate, timing])
 
     perf_df = pd.DataFrame(results, columns=["estimation_technique", "max_error", "max_percent_error", "avg_error", "avg_percent_error", "true_pos_rate", "false_pos_rate", "runtime"])
 
@@ -111,16 +141,19 @@ def GatherAllTrials(data_dir, collection_dir):
     nproc = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(nproc-2)
     for setting in setting_paths.keys():
-        # CollectSettingData(setting, setting_paths[setting], collection_dir)
-        pool.apply_async(CollectSettingData, args = (setting, setting_paths[setting], collection_dir))
-    pool.close()
-    pool.join()
+        CollectSettingData(setting, setting_paths[setting], collection_dir)
+        # pool.apply_async(CollectSettingData, args = (setting, setting_paths[setting], collection_dir))
+    # pool.close()
+    # pool.join()
 
-def TestSNLApproaches(filepath, approaches, ble_params, dist_thresholds):
+def TestSNLApproaches(filepath, approaches, ble_params):
+    start = time.time()
+    num_nodes = GetNodeNumFromFilepath(filepath)
     with open('sim_data_params.json') as f:
         sim_data_params = json.load(f)
     spring_model_params = sim_data_params["spring_params"]
     n_init = spring_model_params[4]
+    large_data = num_nodes >= sim_data_params["large_data_thresh"]
 
     # Read matrix from .xlsx and convert to numpy array
     rss_mat = pd.read_excel(filepath, sheet_name="rss_data", index_col=0).to_numpy()
@@ -139,6 +172,9 @@ def TestSNLApproaches(filepath, approaches, ble_params, dist_thresholds):
     # Run all trials and save results to .xslx file
     runtimes = {}
     for approach in approaches:
+        if large_data and "sdp" in approach:
+            continue
+
         if approach == "spring_model":
             app_name = "spring_model_%dinits"%(n_init)
         else:
@@ -164,9 +200,11 @@ def TestSNLApproaches(filepath, approaches, ble_params, dist_thresholds):
     runtime_df.to_excel(writer, sheet_name = "runtimes")
     writer.save()
     writer.close()
-    print("Wrote data to:", filepath)
+    end = time.time()
+    print("Wrote data to:", filepath, np.round(end-start,2), "(sec)")
 
 def MakeSettingPlots(filepath, approaches):
+    print(filepath)
     dir_name = os.path.dirname(filepath) + "/"
     file_name = os.path.basename(filepath)
     setting = file_name[:file_name.find("_collection")]
@@ -178,13 +216,28 @@ def MakeSettingPlots(filepath, approaches):
 
     full_table.reset_index(inplace=True, drop=True)
 
+    num_nodes = GetNodeNumFromFilepath(filepath)
+    with open('sim_data_params.json') as f:
+        sim_data_params = json.load(f)
+    spring_model_params = sim_data_params["spring_params"]
+    n_init = spring_model_params[4]
+    large_data = num_nodes >= sim_data_params["large_data_thresh"]
+
     max_err_df = None
     avg_err_df = None
     true_pos_df = None
     false_pos_df = None
     runtime_df = None
     for approach in approaches:
-        approach_df = full_table.loc[full_table['estimation_technique'] == approach]
+
+        if large_data and "sdp" in approach:
+            continue
+        if approach == "spring_model":
+            app_name = "spring_model_%dinits"%(n_init)
+        else:
+            app_name = approach
+
+        approach_df = full_table.loc[full_table['estimation_technique'] == app_name]
         max_err_data = approach_df["max_error"].to_numpy()
         max_percent_err_data = approach_df["max_percent_error"].to_numpy()
         avg_err_data = approach_df["avg_error"].to_numpy()
@@ -192,22 +245,23 @@ def MakeSettingPlots(filepath, approaches):
         true_pos_data = approach_df["true_pos_rate"].to_numpy()
         false_pos_data = approach_df["false_pos_rate"].to_numpy()
         runtime_data = approach_df["runtime"].to_numpy()
+
         if runtime_df is None:
-            max_err_df = pd.DataFrame(max_err_data, columns=[approach])
-            max_percent_err_df = pd.DataFrame(max_percent_err_data, columns=[approach])
-            avg_err_df = pd.DataFrame(avg_err_data, columns=[approach])
-            avg_percent_err_df = pd.DataFrame(avg_percent_err_data, columns=[approach])
-            true_pos_df = pd.DataFrame(true_pos_data, columns=[approach])
-            false_pos_df = pd.DataFrame(false_pos_data, columns=[approach])
-            runtime_df = pd.DataFrame(runtime_data, columns=[approach])
+            max_err_df = pd.DataFrame(max_err_data, columns=[app_name])
+            max_percent_err_df = pd.DataFrame(max_percent_err_data, columns=[app_name])
+            avg_err_df = pd.DataFrame(avg_err_data, columns=[app_name])
+            avg_percent_err_df = pd.DataFrame(avg_percent_err_data, columns=[app_name])
+            true_pos_df = pd.DataFrame(true_pos_data, columns=[app_name])
+            false_pos_df = pd.DataFrame(false_pos_data, columns=[app_name])
+            runtime_df = pd.DataFrame(runtime_data, columns=[app_name])
         else:
-            max_err_df[approach] = max_err_data
-            max_percent_err_df[approach] = max_percent_err_data
-            avg_err_df[approach]  = avg_err_data
-            avg_percent_err_df[approach]  = avg_percent_err_data
-            true_pos_df[approach]  = true_pos_data
-            false_pos_df[approach]  = false_pos_data
-            runtime_df[approach]  = runtime_data
+            max_err_df[app_name] = max_err_data
+            max_percent_err_df[app_name] = max_percent_err_data
+            avg_err_df[app_name]  = avg_err_data
+            avg_percent_err_df[app_name]  = avg_percent_err_data
+            true_pos_df[app_name]  = true_pos_data
+            false_pos_df[app_name]  = false_pos_data
+            runtime_df[app_name]  = runtime_data
 
 
 
@@ -428,7 +482,7 @@ def MakeSettingPlots(filepath, approaches):
     plt.close()
 
     plt.close('all')
-    print(filepath)
+    print("Made figures for:", filepath)
 
 if __name__ == '__main__':
 
@@ -438,42 +492,66 @@ if __name__ == '__main__':
     snl_approaches = sim_data_params['snl_approaches']
     ble_params = sim_data_params['ble_params']
     pos_contact_thresh = sim_data_params['pos_contact_thresh']
-    data_dir = sim_data_params['data_dir']
+    sim_data_dir = sim_data_params['sim_data_dir']
+    trinity_read_dir = sim_data_params['trinity_read_dir']
+    trinity_write_dir = sim_data_params['trinity_write_dir']
     collection_dir = sim_data_params['collection_dir']
     num_nodes_list = sim_data_params['num_nodes_list']
     area_lengths = sim_data_params['area_lengths']
     num_repeats = sim_data_params['num_repeat_settings']
 
-    assert(os.path.isdir(data_dir))
-
-    if len(sys.argv) != 2:
-        print("Can only accept one argument\n")
-        print("Options:")
+    if len(sys.argv) != 3:
+        print("Requires two arguments\n")
+        print("(1) Options:")
         print("    generate_data")
         print("    perform_snl")
         print("    get_performance_measures")
         print("    gather_performance_data")
         print("    make_plots")
         print()
+        print("(2) Options:")
+        print("    gauss")
+        print("    trinity")
+        print()
         print()
 
-    assert (len(sys.argv) == 2)
+    assert (len(sys.argv) == 3)
     mode = sys.argv[1]
+    sim_type = sys.argv[2]
+
+    if sim_type == 'gauss':
+        data_dir = sim_data_dir
+    elif sim_type == 'trinity':
+        data_dir = trinity_write_dir
+    else:
+        raise NotImplementedError
+
+    assert(os.path.isdir(data_dir))
+    collection_path = data_dir+collection_dir
 
     if mode == 'generate_data':
         nproc = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(nproc-2)
-        for num_nodes in num_nodes_list:
-            for area_len in area_lengths:
-                for i in range(num_repeats):
-                    # SimulateRssTrial(num_nodes, area_len, i, data_dir, ble_params)
-                    pool.apply_async(SimulateRssTrial, args = (num_nodes, area_len, i, data_dir, ble_params))
+
+        if sim_type == 'gauss':
+            for num_nodes in num_nodes_list:
+                for area_len in area_lengths:
+                    for i in range(num_repeats):
+                        # SimulateRssTrial(num_nodes, area_len, i, data_dir, ble_params)
+                        pool.apply_async(SimulateRssTrial, args = (num_nodes, area_len, i, data_dir, ble_params))
+        elif sim_type == 'trinity':
+            for num_nodes in num_nodes_list:
+                for area_len in area_lengths:
+                    for i in range(num_repeats):
+                        # SimulateTrialsFromTrinityData(num_nodes, area_len, i, trinity_read_dir, trinity_write_dir)
+                        pool.apply_async(SimulateTrialsFromTrinityData, args = (num_nodes, area_len, i, trinity_read_dir, trinity_write_dir))
         pool.close()
         pool.join()
 
     # #Perform SNL Techniques
     elif mode == 'perform_snl':
         files = [data_dir+item for item in os.listdir(data_dir) if ".xlsx" in item]
+        files.sort(key=lambda file: int(file[file.index("_data/")+6:file.index("nodes_")]))
         nproc = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(nproc-2)
         for f_path in files:
@@ -493,20 +571,21 @@ if __name__ == '__main__':
         pool.close()
         pool.join()
 
-    # # Get all performance data together
+    # # Get all performance data together and write into collected file
     elif mode == 'gather_performance_data':
-        GatherAllTrials(data_dir, collection_dir)
+        GatherAllTrials(data_dir, collection_path)
 
     # # Make plots of performance measures
+    # # Also group 'trial statistics' into sheets in *collection.xlsx
     elif mode == 'make_plots':
-        files = [collection_dir+item for item in os.listdir(collection_dir) if "collection.xlsx" in item]
+        files = [collection_path+item for item in os.listdir(collection_path) if "collection.xlsx" in item]
         nproc = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(nproc-2)
         for f_path in files:
-            # MakeSettingPlots(f_path, snl_approaches)
-            pool.apply_async(MakeSettingPlots, args = (f_path, snl_approaches))
-        pool.close()
-        pool.join()
+            MakeSettingPlots(f_path, snl_approaches)
+        #     pool.apply_async(MakeSettingPlots, args = (f_path, snl_approaches))
+        # pool.close()
+        # pool.join()
 
 
 

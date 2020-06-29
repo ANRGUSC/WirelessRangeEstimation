@@ -1,6 +1,7 @@
 import numpy as np
 import time
 # import matplotlib.pyplot as plt
+import json
 from sklearn import manifold
 from estimate_distance import estimate_distance
 from simulate_rss_matrix import simulate_rss_matrix
@@ -24,7 +25,10 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
         else:
             estimated_locations = np.random.rand(n,2)*10
         previous_estimates = estimated_locations.copy()
+        keep_iterating = True
         for iteration in range(max_iterations):
+            if not keep_iterating:
+                break
             sum_all_forces = 0
             for i in range(n):
                 total_force = [0,0]
@@ -37,6 +41,12 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
                             dist_meas, dist_min, dist_max = estimate_distance(rss_matrix[i][j], estimate_distance_params)
                             uncertainty = dist_max-dist_min
                             e = (dist_est-dist_meas)
+
+                            # Adding this to avoid huge loops over diverging systems
+                            if np.inf in i_to_j or np.inf is dist_est:
+                                print("Divergence in spring solver")
+                                continue
+
                             # magnitude of force applied by a pair is the error in our current estimate,
                             # weighted by how likely the RSS measurement is to be accurate
                             if dist_est > 0:
@@ -135,6 +145,7 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         spring_model_params = sim_data_params["spring_params"]
     max_iterations = spring_model_params[0]
     step_size = spring_model_params[1]
+    step_size = 1/float(n)
     epsilon = spring_model_params[2]
     show_visualization = spring_model_params[3]
     n_init = spring_model_params[4]
