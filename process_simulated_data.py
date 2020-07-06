@@ -575,6 +575,7 @@ if __name__ == '__main__':
     # # Get performance measures for SNL techniques
     elif mode == 'get_performance_measures':
         files = [data_dir+item for item in os.listdir(data_dir) if ".xlsx" in item]
+        files.sort(key=lambda file: int(file[file.index("_data/")+6:file.index("nodes_")]))
         nproc = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(nproc-2)
         for f_path in files:
