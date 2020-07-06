@@ -526,7 +526,10 @@ if __name__ == '__main__':
     else:
         raise NotImplementedError
 
-    assert(os.path.isdir(data_dir))
+    if not (os.path.isdir(data_dir)):
+        os.mkdir(data_dir)
+        assert(os.path.isdir(data_dir))
+
     collection_path = data_dir+collection_dir
 
     if mode == 'generate_data':
