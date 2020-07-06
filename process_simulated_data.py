@@ -121,6 +121,9 @@ def CharacterizePerformance(filepath, approaches, threshold):
 def CollectSettingData(exp_setting, experiment_paths, collection_dir):
     start = time.time()
     writer = pd.ExcelWriter(collection_dir+exp_setting+"_collection.xlsx", engine = 'openpyxl')
+    print(exp_setting)
+    print(experiment_paths)
+    print()
     for trial_path in experiment_paths:
         trial_name = trial_path[trial_path.find("_trial")+1:trial_path.find(".xlsx")]
         trial_results_df = pd.read_excel(trial_path, sheet_name="estimation_performance", index_col=0)
