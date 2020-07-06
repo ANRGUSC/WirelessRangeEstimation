@@ -127,7 +127,7 @@ def GenerateRssiMatrix(num_nodes, node_locs, dist_list, rssi_dfs):
             loc_j = node_locs[j]
             diff = loc_i - loc_j
             dist = np.linalg.norm(diff)
-            if dist > max_dist:
+            if dist > max_dist or np.random.random() > 0.9:
                 rssi_arr[i][j] = max_dist_rssi
                 rssi_arr[j][i] = max_dist_rssi
                 continue
