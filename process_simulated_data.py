@@ -141,10 +141,10 @@ def GatherAllTrials(data_dir, collection_dir):
     nproc = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(nproc-2)
     for setting in setting_paths.keys():
-        CollectSettingData(setting, setting_paths[setting], collection_dir)
-        # pool.apply_async(CollectSettingData, args = (setting, setting_paths[setting], collection_dir))
-    # pool.close()
-    # pool.join()
+        # CollectSettingData(setting, setting_paths[setting], collection_dir)
+        pool.apply_async(CollectSettingData, args = (setting, setting_paths[setting], collection_dir))
+    pool.close()
+    pool.join()
 
 def TestSNLApproaches(filepath, approaches, ble_params):
     start = time.time()
@@ -172,7 +172,7 @@ def TestSNLApproaches(filepath, approaches, ble_params):
     # Run all trials and save results to .xslx file
     runtimes = {}
     for approach in approaches:
-        if large_data and "sdp" in approach:
+        if large_data and ("sdp" in approach or "spring" in approach):
             continue
 
         if approach == "spring_model":
