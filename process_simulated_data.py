@@ -57,6 +57,7 @@ def GetConfusionInfo(true_dist_upper, est_dist_upper, threshold):
     return true_pos_rate, false_pos_rate
 
 def CharacterizePerformance(filepath, approaches, threshold):
+    start = time.time()
     true_dist_df = pd.read_excel(filepath, sheet_name="true_dist", index_col=0)
     runtime_df = pd.read_excel(filepath, sheet_name="runtimes", index_col=0)
     true_dist_arr = true_dist_df.to_numpy()
@@ -113,9 +114,12 @@ def CharacterizePerformance(filepath, approaches, threshold):
     perf_df.to_excel(writer, sheet_name = "estimation_performance")
     writer.save()
     writer.close()
-    print("Performance calculated for:", filepath)
+
+    end = time.time()
+    print("Performance calculated for:", filepath, np.round(end-start,2), "(sec)")
 
 def CollectSettingData(exp_setting, experiment_paths, collection_dir):
+    start = time.time()
     writer = pd.ExcelWriter(collection_dir+exp_setting+"_collection.xlsx", engine = 'openpyxl')
     for trial_path in experiment_paths:
         trial_name = trial_path[trial_path.find("_trial")+1:trial_path.find(".xlsx")]
@@ -123,7 +127,9 @@ def CollectSettingData(exp_setting, experiment_paths, collection_dir):
         trial_results_df.to_excel(writer, sheet_name = trial_name)
     writer.save()
     writer.close()
-    print("Gathered results for:", exp_setting)
+
+    end = time.time()
+    print("Gathered results for:", exp_setting, np.round(end-start,2), "(sec)")
 
 def GatherAllTrials(data_dir, collection_dir):
     if not (os.path.isdir(collection_dir)):
@@ -205,6 +211,7 @@ def TestSNLApproaches(filepath, approaches, ble_params):
 
 def MakeSettingPlots(filepath, approaches):
     print(filepath)
+    start = time.time()
     dir_name = os.path.dirname(filepath) + "/"
     file_name = os.path.basename(filepath)
     setting = file_name[:file_name.find("_collection")]
@@ -482,7 +489,9 @@ def MakeSettingPlots(filepath, approaches):
     plt.close()
 
     plt.close('all')
-    print("Made figures for:", filepath)
+
+    end = time.time()
+    print("Made figures for:", filepath, np.round(end-start,2), (sec))
 
 if __name__ == '__main__':
 

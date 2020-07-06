@@ -146,6 +146,7 @@ def GenerateNeighborLoc(loc, dist, area_len):
     return neigh_loc
 
 def SimulateTrialsFromTrinityData(num_nodes, area_len, iteration, input_path, data_dir):
+    start = time.time()
     trinity_df = pd.read_csv(input_path)
 
     dists = list(trinity_df['dist'].unique())
@@ -186,7 +187,9 @@ def SimulateTrialsFromTrinityData(num_nodes, area_len, iteration, input_path, da
 
 
     writer.save()
-    print("Data written to:", filepath)
+
+    end = time.time()
+    print("Data written to:", filepath, np.round(end-time,2), "(sec)")
 
 
 if __name__ == '__main__':
