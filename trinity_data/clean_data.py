@@ -104,6 +104,23 @@ if __name__ == '__main__':
     Aggregates selected data provided by Doug Leith
     from Trinity College. Writes to specified
     output_file
+
+    1) outdoor RSSI vs distance measurements (0.5-4m)
+    2) Indoor RSSI vs distance measurements (0.5-4m)
+    3) Person orientation (1m)
+    4) Person around the device (front-back-left-right) (1m)
+    5) Phone in purse (1m)
+    7) Carrying phone, walking near each other (0.5-2m)
+    8) Handset orientation to each other (1m)
+    9) People around table (0.8, 1m)
+    13) People in supermarket (0.5, 2m)
+    14) In line outside supermarket (2, 4m)
+
+    ble_params: [d_ref  (reference distance in m), power_ref (received power at the reference distance), path_loss_exp (path loss exponent), stdev_power (standard deviation of received power in dB), threshold (signals below this value cannot be received)]
+    Outside: [1, -63.5664, 2.3022, 2.8101, -100]
+    Inside: [1, -62.9190, 2.3158, 3.4418, -100]
+    Train: [1, -60.4517, 1.3640, 5.054, -100]
+
     """
     path = os.getcwd() + "/"
     files = [path+item for item in os.listdir(path) if (".csv" in item and "fig" in item)]
