@@ -22,7 +22,7 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
         if initialization is not None:
             estimated_locations = initialization
         else:
-            estimated_locations = np.random.rand(n,2)*10
+            estimated_locations = np.random.rand(n,2)*estimate_distance(np.min(rss_matrix))[0]
         previous_estimates = estimated_locations.copy()
         for iteration in range(max_iterations):
             sum_all_forces = 0
@@ -31,7 +31,7 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
                 for j in range(n):
                     if j != i:
                         # remove "or True" to ignore rss values at the threshold
-                        if rss_matrix[i][j] > threshold or True:
+                        if rss_matrix[i][j] > threshold:
                             i_to_j = np.subtract(estimated_locations[j],estimated_locations[i])
                             dist_est = np.linalg.norm(i_to_j)
                             dist_meas, dist_min, dist_max = estimate_distance(rss_matrix[i][j], estimate_distance_params)
