@@ -77,7 +77,7 @@ def CharacterizePerformance(filepath, approaches, threshold):
     results = []
     for approach in approaches:
 
-        if large_data and "sdp" in approach:
+        if large_data and ("sdp" in approach or "spring" in approach):
             continue
         if approach == "spring_model":
             app_name = "spring_model_%dinits"%(n_init)
@@ -91,7 +91,12 @@ def CharacterizePerformance(filepath, approaches, threshold):
         # extracting upper diagonal part of matrices because of symmetry
         est_dist_upper = est_dist_arr[np.triu_indices(n, k=1)]
         abs_diff_upper = np.abs(true_dist_upper - est_dist_upper)
+
         percent_error_upper = abs_diff_upper/true_dist_upper
+
+        if 0 in true_dist_upper:
+            zero_locs = np.where(true_dist_upper == 0)[0]
+            percent_error_upper[zero_locs] = abs_diff_upper[zero_locs]
 
         avg_error = abs_diff_upper.mean()
         avg_percent_error = percent_error_upper.mean()
