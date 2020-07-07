@@ -165,7 +165,10 @@ def SimulateTrialsFromTrinityData(num_nodes, area_len, iteration, input_path, da
             while sample_dist > area_len * 2/3:
                 sample_dist = random.sample(dists, 1)[0]
 
-            neigh_loc = GenerateNeighborLoc(sample_loc, sample_dist, area_len)
+            neigh_loc = node_locs[0]
+            while neigh_loc in node_locs:
+                neigh_loc = GenerateNeighborLoc(sample_loc, sample_dist, area_len)
+
             node_locs.append(neigh_loc)
 
     node_locs = np.array(node_locs)
