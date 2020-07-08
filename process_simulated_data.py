@@ -563,10 +563,10 @@ if __name__ == '__main__':
             for num_nodes in num_nodes_list:
                 for area_len in area_lengths:
                     for i in range(num_repeats):
-                        SimulateTrialsFromTrinityData(num_nodes, area_len, i, trinity_read_dir, trinity_write_dir)
-        #                 pool.apply_async(SimulateTrialsFromTrinityData, args = (num_nodes, area_len, i, trinity_read_dir, trinity_write_dir))
-        # pool.close()
-        # pool.join()
+                        # SimulateTrialsFromTrinityData(num_nodes, area_len, i, trinity_read_dir, trinity_write_dir)
+                        pool.apply_async(SimulateTrialsFromTrinityData, args = (num_nodes, area_len, i, trinity_read_dir, trinity_write_dir))
+        pool.close()
+        pool.join()
 
     # #Perform SNL Techniques
     elif mode == 'perform_snl':
