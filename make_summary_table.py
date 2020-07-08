@@ -11,6 +11,7 @@ import multiprocessing
 from openpyxl import load_workbook
 import matplotlib.pyplot as plt
 from scipy.special import ndtr
+import subprocess
 
 
 def MakeSummaryTables(files, snl_approaches):
@@ -43,12 +44,28 @@ def MakeSummaryTables(files, snl_approaches):
 
     approaches = list(max_err_df.columns)[1:]
     approaches.sort()
-    print(approaches)
 
     table = pd.DataFrame()
     for app in approaches:
-        return
-        # table[app] = []
+        avg_per_err = np.round(avg_percent_err_df[app].mean(), 1)
+        max_per_err = np.round(max_percent_err_df[app].mean(), 1)
+        true_pos = np.round(true_pos_df[app].mean(), 2)
+        false_pos = np.round(false_pos_df[app].mean(), 2)
+        runtime = np.round(runtime_df[app].mean(), 1)
+        table[app] = [avg_per_err, max_per_err, true_pos, false_pos, runtime]
 
+    table = table.rename({0: "Avg % Error", 1: "Max % Error", 2:"TPR", 3:"FPR", 4:"Runtime (s)"})
+    print(table)
 
+    filename = 'summary_w_pockets_no_misses.tex'
+
+    template = r'''\documentclass[preview]{{standalone}}
+    \usepackage{{booktabs}}
+    \begin{{document}}
+    {}
+    \end{{document}}
+    '''
+
+    with open(filename, 'w') as f:
+        f.write(template.format(table.to_latex()))
 
