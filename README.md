@@ -26,4 +26,13 @@ scaling[<sup>2</sup>](http://cda.psych.uiuc.edu/psychometrika_highly_cited_artic
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Example usage: `node_locs, rss_matrix = simulate_rss_matrix(num_nodes=4, area_side=100)`
 
 
+## Data Folders
+
+*pixelonly_10miss*
+The results in here are based on only sampling the RSSI data from fig1a with the pixel data
+
+
 Contributors: Lillian Clark (lilliamc@usc.edu) and Bhaskar Krishnamachari (bkrishna@usc.edu), University of Southern California
+
+
+
