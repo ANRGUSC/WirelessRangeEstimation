@@ -245,7 +245,7 @@ def MakeSettingPlots(filepath, approaches):
     runtime_df = None
     for approach in approaches:
 
-        if large_data and "sdp" in approach:
+        if large_data and ("sdp" in approach or "spring" in approach):
             continue
         if approach == "spring_model":
             app_name = "spring_model_%dinits"%(n_init)
@@ -499,7 +499,7 @@ def MakeSettingPlots(filepath, approaches):
     plt.close('all')
 
     end = time.time()
-    print("Made figures for:", filepath, np.round(end-start,2), (sec))
+    print("Made figures for:", filepath, np.round(end-start,2), "(sec)")
 
 if __name__ == '__main__':
 
@@ -525,6 +525,7 @@ if __name__ == '__main__':
         print("    get_performance_measures")
         print("    gather_performance_data")
         print("    make_plots")
+        print("    make_tables")
         print()
         print("(2) Options:")
         print("    gauss")
@@ -607,6 +608,18 @@ if __name__ == '__main__':
         #     pool.apply_async(MakeSettingPlots, args = (f_path, snl_approaches))
         # pool.close()
         # pool.join()
+
+    # # Make summary tables of different techniques performance
+    elif mode == 'make_tables':
+        files = [collection_path+item for item in os.listdir(collection_path) if "collection.xlsx" in item]
+        nproc = multiprocessing.cpu_count()
+        pool = multiprocessing.Pool(nproc-2)
+        for f_path in files:
+            MakeSummaryTables(f_path, snl_approaches)
+        #     pool.apply_async(MakeSummaryTables, args = (f_path, snl_approaches))
+        # pool.close()
+        # pool.join()
+
 
 
 
