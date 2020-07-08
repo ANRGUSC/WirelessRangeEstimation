@@ -166,7 +166,7 @@ def SimulateTrialsFromTrinityData(num_nodes, area_len, iteration, input_path, da
                 sample_dist = random.sample(dists, 1)[0]
 
             neigh_loc = node_locs[0]
-            while neigh_loc in node_locs:
+            while (node_locs == neigh_loc).any():
                 neigh_loc = GenerateNeighborLoc(sample_loc, sample_dist, area_len)
 
             node_locs.append(neigh_loc)
@@ -192,7 +192,7 @@ def SimulateTrialsFromTrinityData(num_nodes, area_len, iteration, input_path, da
     writer.save()
 
     end = time.time()
-    print("Data written to:", filepath, np.round(end-time,2), "(sec)")
+    print("Data written to:", filepath, np.round(end-start,2), "(sec)")
 
 
 if __name__ == '__main__':
