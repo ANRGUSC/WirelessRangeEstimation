@@ -19,10 +19,10 @@
         5
     ],
     "ble_params": [
-        1.0,
-        -46.123,
-        2.902,
-        3.94,
+        1,
+        -62.9190,
+        2.3158,
+        3.2,
         -105
     ],
     "pos_contact_thresh": 2,
@@ -31,10 +31,16 @@
     "trinity_write_dir": "./simulated_trinity_data/",
     "collection_dir": "/collection/",
     "num_nodes_list": [
-        10
+        10,
+        25,
+        50,
+        100,
+        250
     ],
     "area_lengths": [
-        5
+        10,
+        20,
+        40
     ],
     "num_repeat_settings": 50,
     "large_data_thresh": 100

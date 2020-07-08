@@ -127,7 +127,7 @@ def GenerateRssiMatrix(num_nodes, node_locs, dist_list, rssi_dfs):
             loc_j = node_locs[j]
             diff = loc_i - loc_j
             dist = np.linalg.norm(diff)
-            if dist > max_dist:
+            if dist > max_dist or np.random.random() > 10:
                 rssi_arr[i][j] = max_dist_rssi
                 rssi_arr[j][i] = max_dist_rssi
                 continue
@@ -146,6 +146,7 @@ def GenerateNeighborLoc(loc, dist, area_len):
     return neigh_loc
 
 def SimulateTrialsFromTrinityData(num_nodes, area_len, iteration, input_path, data_dir):
+    start = time.time()
     trinity_df = pd.read_csv(input_path)
 
     dists = list(trinity_df['dist'].unique())
@@ -164,7 +165,10 @@ def SimulateTrialsFromTrinityData(num_nodes, area_len, iteration, input_path, da
             while sample_dist > area_len * 2/3:
                 sample_dist = random.sample(dists, 1)[0]
 
-            neigh_loc = GenerateNeighborLoc(sample_loc, sample_dist, area_len)
+            neigh_loc = node_locs[0]
+            while (node_locs == neigh_loc).any():
+                neigh_loc = GenerateNeighborLoc(sample_loc, sample_dist, area_len)
+
             node_locs.append(neigh_loc)
 
     node_locs = np.array(node_locs)
@@ -186,7 +190,9 @@ def SimulateTrialsFromTrinityData(num_nodes, area_len, iteration, input_path, da
 
 
     writer.save()
-    print("Data written to:", filepath)
+
+    end = time.time()
+    print("Data written to:", filepath, np.round(end-start,2), "(sec)")
 
 
 if __name__ == '__main__':

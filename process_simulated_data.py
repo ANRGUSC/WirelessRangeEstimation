@@ -1,5 +1,6 @@
 from estimate_distance_matrix import estimate_distance_matrix
 from make_simulated_data import SimulateRssTrial, SimulateTrialsFromTrinityData
+from make_summary_table import MakeSummaryTables
 
 import re
 import time
@@ -57,6 +58,7 @@ def GetConfusionInfo(true_dist_upper, est_dist_upper, threshold):
     return true_pos_rate, false_pos_rate
 
 def CharacterizePerformance(filepath, approaches, threshold):
+    start = time.time()
     true_dist_df = pd.read_excel(filepath, sheet_name="true_dist", index_col=0)
     runtime_df = pd.read_excel(filepath, sheet_name="runtimes", index_col=0)
     true_dist_arr = true_dist_df.to_numpy()
@@ -72,11 +74,12 @@ def CharacterizePerformance(filepath, approaches, threshold):
     spring_model_params = sim_data_params["spring_params"]
     n_init = spring_model_params[4]
     large_data = num_nodes >= sim_data_params["large_data_thresh"]
+    large_data = False
 
     results = []
     for approach in approaches:
 
-        if large_data and "sdp" in approach:
+        if large_data and ("sdp" in approach or "spring" in approach):
             continue
         if approach == "spring_model":
             app_name = "spring_model_%dinits"%(n_init)
@@ -90,7 +93,12 @@ def CharacterizePerformance(filepath, approaches, threshold):
         # extracting upper diagonal part of matrices because of symmetry
         est_dist_upper = est_dist_arr[np.triu_indices(n, k=1)]
         abs_diff_upper = np.abs(true_dist_upper - est_dist_upper)
+
         percent_error_upper = abs_diff_upper/true_dist_upper
+
+        if 0 in true_dist_upper:
+            zero_locs = np.where(true_dist_upper == 0)[0]
+            percent_error_upper[zero_locs] = abs_diff_upper[zero_locs]
 
         avg_error = abs_diff_upper.mean()
         avg_percent_error = percent_error_upper.mean()
@@ -113,9 +121,12 @@ def CharacterizePerformance(filepath, approaches, threshold):
     perf_df.to_excel(writer, sheet_name = "estimation_performance")
     writer.save()
     writer.close()
-    print("Performance calculated for:", filepath)
+
+    end = time.time()
+    print("Performance calculated for:", filepath, np.round(end-start,2), "(sec)")
 
 def CollectSettingData(exp_setting, experiment_paths, collection_dir):
+    start = time.time()
     writer = pd.ExcelWriter(collection_dir+exp_setting+"_collection.xlsx", engine = 'openpyxl')
     for trial_path in experiment_paths:
         trial_name = trial_path[trial_path.find("_trial")+1:trial_path.find(".xlsx")]
@@ -123,7 +134,12 @@ def CollectSettingData(exp_setting, experiment_paths, collection_dir):
         trial_results_df.to_excel(writer, sheet_name = trial_name)
     writer.save()
     writer.close()
-    print("Gathered results for:", exp_setting)
+
+    end = time.time()
+    print(exp_setting)
+    print(experiment_paths)
+    print("Gathered results for:", exp_setting, np.round(end-start,2), "(sec)")
+    print()
 
 def GatherAllTrials(data_dir, collection_dir):
     if not (os.path.isdir(collection_dir)):
@@ -141,10 +157,10 @@ def GatherAllTrials(data_dir, collection_dir):
     nproc = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(nproc-2)
     for setting in setting_paths.keys():
-        CollectSettingData(setting, setting_paths[setting], collection_dir)
-        # pool.apply_async(CollectSettingData, args = (setting, setting_paths[setting], collection_dir))
-    # pool.close()
-    # pool.join()
+        # CollectSettingData(setting, setting_paths[setting], collection_dir)
+        pool.apply_async(CollectSettingData, args = (setting, setting_paths[setting], collection_dir))
+    pool.close()
+    pool.join()
 
 def TestSNLApproaches(filepath, approaches, ble_params):
     start = time.time()
@@ -154,6 +170,7 @@ def TestSNLApproaches(filepath, approaches, ble_params):
     spring_model_params = sim_data_params["spring_params"]
     n_init = spring_model_params[4]
     large_data = num_nodes >= sim_data_params["large_data_thresh"]
+    large_data = False
 
     # Read matrix from .xlsx and convert to numpy array
     rss_mat = pd.read_excel(filepath, sheet_name="rss_data", index_col=0).to_numpy()
@@ -172,7 +189,7 @@ def TestSNLApproaches(filepath, approaches, ble_params):
     # Run all trials and save results to .xslx file
     runtimes = {}
     for approach in approaches:
-        if large_data and "sdp" in approach:
+        if large_data and ("sdp" in approach or "spring" in approach):
             continue
 
         if approach == "spring_model":
@@ -205,6 +222,7 @@ def TestSNLApproaches(filepath, approaches, ble_params):
 
 def MakeSettingPlots(filepath, approaches):
     print(filepath)
+    start = time.time()
     dir_name = os.path.dirname(filepath) + "/"
     file_name = os.path.basename(filepath)
     setting = file_name[:file_name.find("_collection")]
@@ -212,6 +230,8 @@ def MakeSettingPlots(filepath, approaches):
     full_table = pd.DataFrame()
     for name, sheet in trials_dict.items():
         if "trial" in name:
+            if (np.isinf(sheet['max_percent_error'].astype(float)).any()):
+                continue
             full_table = full_table.append(sheet)
 
     full_table.reset_index(inplace=True, drop=True)
@@ -222,6 +242,7 @@ def MakeSettingPlots(filepath, approaches):
     spring_model_params = sim_data_params["spring_params"]
     n_init = spring_model_params[4]
     large_data = num_nodes >= sim_data_params["large_data_thresh"]
+    large_data = False
 
     max_err_df = None
     avg_err_df = None
@@ -230,7 +251,7 @@ def MakeSettingPlots(filepath, approaches):
     runtime_df = None
     for approach in approaches:
 
-        if large_data and "sdp" in approach:
+        if large_data and ("sdp" in approach or "spring" in approach):
             continue
         if approach == "spring_model":
             app_name = "spring_model_%dinits"%(n_init)
@@ -289,7 +310,7 @@ def MakeSettingPlots(filepath, approaches):
     my_fig, ax = plt.subplots()
     boxplot = max_err_df.boxplot(grid=False)
     figure = plt.gcf() # get current figure
-    plt.title("Max. Error")
+    # plt.title("Max. Error")
     plt.ylabel("meters")
     figure.set_size_inches(15, 6)
     my_fig.savefig(dir_name+setting+"_max_err.png", format="png")
@@ -299,7 +320,7 @@ def MakeSettingPlots(filepath, approaches):
     # PDF
     max_err_df.plot.kde(ind=1000)
     figure = plt.gcf() # get current figure
-    plt.title("PDF of Max Error")
+    # plt.title("PDF of Max Error")
     plt.xlabel("meters")
     plt.xlim(0)
     figure.savefig(dir_name+setting+"_max_err_pdf.png", format="png")
@@ -318,7 +339,7 @@ def MakeSettingPlots(filepath, approaches):
         pdeAE_cdf = ndtr(np.subtract.outer(xAE, errors)).mean(axis=1)
         plt.plot(xAE, pdeAE_cdf,label=col)
     plt.xlim(0, max_err+offset)
-    plt.title("CDF of Max Error")
+    # plt.title("CDF of Max Error")
     plt.xlabel("meters")
     plt.legend()
     figure = plt.gcf() # get current figure
@@ -331,8 +352,7 @@ def MakeSettingPlots(filepath, approaches):
     my_fig, ax = plt.subplots()
     boxplot = max_percent_err_df.boxplot(grid=False)
     figure = plt.gcf() # get current figure
-    plt.title("Max Percent Error")
-    plt.ylabel("meters")
+    # plt.title("Max Percent Error")
     figure.set_size_inches(15, 6)
     my_fig.savefig(dir_name+setting+"_max_percent_err.png", format="png")
     plt.close()
@@ -341,7 +361,7 @@ def MakeSettingPlots(filepath, approaches):
     # PDF
     max_percent_err_df.plot.kde(ind=1000)
     figure = plt.gcf() # get current figure
-    plt.title("PDF of Max Error")
+    # plt.title("PDF of Max Error")
     plt.xlabel("meters")
     plt.xlim(0)
     figure.savefig(dir_name+setting+"_max_percent_err_pdf.png", format="png")
@@ -360,7 +380,7 @@ def MakeSettingPlots(filepath, approaches):
         pdeAE_cdf = ndtr(np.subtract.outer(xAE, errors)).mean(axis=1)
         plt.plot(xAE, pdeAE_cdf,label=col)
     plt.xlim(0, max_percent_err+offset)
-    plt.title("CDF of Max Error")
+    # plt.title("CDF of Max Error")
     plt.xlabel("meters")
     plt.legend()
     figure = plt.gcf() # get current figure
@@ -373,7 +393,7 @@ def MakeSettingPlots(filepath, approaches):
     my_fig, ax = plt.subplots()
     boxplot = avg_err_df.boxplot(grid=False)
     figure = plt.gcf() # get current figure
-    plt.title("Avg. Error")
+    # plt.title("Avg. Error")
     plt.ylabel("meters")
     figure.set_size_inches(15, 6)
     my_fig.savefig(dir_name+setting+"_avg_error.png", format="png")
@@ -383,7 +403,7 @@ def MakeSettingPlots(filepath, approaches):
     # PDF
     avg_err_df.plot.kde(ind=1000)
     figure = plt.gcf() # get current figure
-    plt.title("PDF of Avg Error")
+    # plt.title("PDF of Avg. Error")
     plt.xlabel("meters")
     plt.xlim(0)
     figure.savefig(dir_name+setting+"_avg_err_pdf.png", format="png")
@@ -402,7 +422,7 @@ def MakeSettingPlots(filepath, approaches):
         pdeAE_cdf = ndtr(np.subtract.outer(xAE, errors)).mean(axis=1)
         plt.plot(xAE, pdeAE_cdf,label=col)
     plt.xlim(0, avg_err_max+offset)
-    plt.title("CDF of Avg Error")
+    # plt.title("CDF of Avg. Error")
     plt.xlabel("meters")
     plt.legend()
     figure = plt.gcf() # get current figure
@@ -415,8 +435,7 @@ def MakeSettingPlots(filepath, approaches):
     my_fig, ax = plt.subplots()
     boxplot = avg_percent_err_df.boxplot(grid=False)
     figure = plt.gcf() # get current figure
-    plt.title("Avg. Error")
-    plt.ylabel("meters")
+    # plt.title("Avg. Percent Error")
     figure.set_size_inches(15, 6)
     my_fig.savefig(dir_name+setting+"_avg_percent_error.png", format="png")
     plt.close()
@@ -425,8 +444,8 @@ def MakeSettingPlots(filepath, approaches):
     # PDF
     avg_percent_err_df.plot.kde(ind=1000)
     figure = plt.gcf() # get current figure
-    plt.title("PDF of Avg Error")
-    plt.xlabel("meters")
+    # plt.title("PDF of Avg Percent Error")
+    plt.xlabel("percent")
     plt.xlim(0)
     figure.savefig(dir_name+setting+"_avg_percent_err_pdf.png", format="png")
     plt.close()
@@ -444,8 +463,8 @@ def MakeSettingPlots(filepath, approaches):
         pdeAE_cdf = ndtr(np.subtract.outer(xAE, errors)).mean(axis=1)
         plt.plot(xAE, pdeAE_cdf,label=col)
     plt.xlim(0, avg_percent_err_max+offset)
-    plt.title("CDF of Avg Error")
-    plt.xlabel("meters")
+    # plt.title("CDF of Avg Percent Error")
+    plt.xlabel("percent")
     plt.legend()
     figure = plt.gcf() # get current figure
     figure.savefig(dir_name+setting+"_avg_percent_err_cdf.png", format="png")
@@ -456,7 +475,7 @@ def MakeSettingPlots(filepath, approaches):
     my_fig, ax = plt.subplots()
     boxplot = true_pos_df.boxplot(grid=False)
     figure = plt.gcf() # get current figure
-    plt.title("True Positive Rate")
+    # plt.title("True Positive Rate")
     figure.set_size_inches(15, 6)
     my_fig.savefig(dir_name+setting+"_true_positive.png", format="png")
     plt.close()
@@ -465,7 +484,7 @@ def MakeSettingPlots(filepath, approaches):
     my_fig, ax = plt.subplots()
     boxplot = false_pos_df.boxplot(grid=False)
     figure = plt.gcf() # get current figure
-    plt.title("False Positive Rate")
+    # plt.title("False Positive Rate")
     figure.set_size_inches(15, 6)
     my_fig.savefig(dir_name+setting+"_false_positive.png", format="png")
     plt.close()
@@ -475,14 +494,16 @@ def MakeSettingPlots(filepath, approaches):
     my_fig, ax = plt.subplots()
     boxplot = runtime_df.boxplot(grid=False)
     figure = plt.gcf() # get current figure
-    plt.title("Runtime")
+    # plt.title("Runtime")
     plt.ylabel("seconds")
     figure.set_size_inches(15, 6)
     my_fig.savefig(dir_name+setting+"_runtime.png", format="png")
     plt.close()
 
     plt.close('all')
-    print("Made figures for:", filepath)
+
+    end = time.time()
+    print("Made figures for:", filepath, np.round(end-start,2), "(sec)")
 
 if __name__ == '__main__':
 
@@ -508,6 +529,7 @@ if __name__ == '__main__':
         print("    get_performance_measures")
         print("    gather_performance_data")
         print("    make_plots")
+        print("    make_tables")
         print()
         print("(2) Options:")
         print("    gauss")
@@ -526,7 +548,10 @@ if __name__ == '__main__':
     else:
         raise NotImplementedError
 
-    assert(os.path.isdir(data_dir))
+    if not (os.path.isdir(data_dir)):
+        os.mkdir(data_dir)
+        assert(os.path.isdir(data_dir))
+
     collection_path = data_dir+collection_dir
 
     if mode == 'generate_data':
@@ -563,6 +588,7 @@ if __name__ == '__main__':
     # # Get performance measures for SNL techniques
     elif mode == 'get_performance_measures':
         files = [data_dir+item for item in os.listdir(data_dir) if ".xlsx" in item]
+        files.sort(key=lambda file: int(file[file.index("_data/")+6:file.index("nodes_")]))
         nproc = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(nproc-2)
         for f_path in files:
@@ -586,6 +612,12 @@ if __name__ == '__main__':
         #     pool.apply_async(MakeSettingPlots, args = (f_path, snl_approaches))
         # pool.close()
         # pool.join()
+
+    # # Make summary tables of different techniques performance
+    elif mode == 'make_tables':
+        files = [collection_path+item for item in os.listdir(collection_path) if "collection.xlsx" in item]
+        MakeSummaryTables(files, snl_approaches)
+
 
 
 
