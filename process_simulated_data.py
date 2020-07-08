@@ -74,6 +74,7 @@ def CharacterizePerformance(filepath, approaches, threshold):
     spring_model_params = sim_data_params["spring_params"]
     n_init = spring_model_params[4]
     large_data = num_nodes >= sim_data_params["large_data_thresh"]
+    large_data = False
 
     results = []
     for approach in approaches:
@@ -169,6 +170,7 @@ def TestSNLApproaches(filepath, approaches, ble_params):
     spring_model_params = sim_data_params["spring_params"]
     n_init = spring_model_params[4]
     large_data = num_nodes >= sim_data_params["large_data_thresh"]
+    large_data = False
 
     # Read matrix from .xlsx and convert to numpy array
     rss_mat = pd.read_excel(filepath, sheet_name="rss_data", index_col=0).to_numpy()
@@ -240,6 +242,7 @@ def MakeSettingPlots(filepath, approaches):
     spring_model_params = sim_data_params["spring_params"]
     n_init = spring_model_params[4]
     large_data = num_nodes >= sim_data_params["large_data_thresh"]
+    large_data = False
 
     max_err_df = None
     avg_err_df = None
