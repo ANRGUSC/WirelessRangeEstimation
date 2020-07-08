@@ -1,7 +1,6 @@
 import numpy as np
 import time
-# import matplotlib.pyplot as plt
-import json
+import matplotlib.pyplot as plt
 from sklearn import manifold
 from estimate_distance import estimate_distance
 from simulate_rss_matrix import simulate_rss_matrix
@@ -25,28 +24,19 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
         else:
             estimated_locations = np.random.rand(n,2)*10
         previous_estimates = estimated_locations.copy()
-        keep_iterating = True
         for iteration in range(max_iterations):
-            if not keep_iterating:
-                break
             sum_all_forces = 0
             for i in range(n):
                 total_force = [0,0]
                 for j in range(n):
                     if j != i:
                         # remove "or True" to ignore rss values at the threshold
-                        if rss_matrix[i][j] > threshold or True:
+                        if rss_matrix[i][j] > threshold: # or True:
                             i_to_j = np.subtract(estimated_locations[j],estimated_locations[i])
                             dist_est = np.linalg.norm(i_to_j)
                             dist_meas, dist_min, dist_max = estimate_distance(rss_matrix[i][j], estimate_distance_params)
                             uncertainty = dist_max-dist_min
                             e = (dist_est-dist_meas)
-
-                            # Adding this to avoid huge loops over diverging systems
-                            if np.inf in i_to_j or np.inf is dist_est:
-                                print("Divergence in spring solver")
-                                continue
-
                             # magnitude of force applied by a pair is the error in our current estimate,
                             # weighted by how likely the RSS measurement is to be accurate
                             if dist_est > 0:
@@ -97,6 +87,7 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
                                         "lle",
                                         "isomap"}
                 RSS only performs naive pair-wise distance estimation, with options for
+                    averaging pariwise-RSS before estimation or averaging pairwise-distance afer estimation.
                 Spring model performs distributed stress majorization.
                 SDP performs convex optimization of the relaxed semi-definite program.
                 MDS performs stress majorization of the metric multidimensional scaling problem,
@@ -130,22 +121,18 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
     '''
 
     # number of devices
-    assert(rss_matrix.shape[0] == rss_matrix.shape[1])
     n = rss_matrix.shape[0]
 
-    with open('sim_data_params.json') as f:
-        sim_data_params = json.load(f)
-
     if estimate_distance_params is None:
-        estimate_distance_params = sim_data_params["ble_params"]
+        estimate_distance_params = (1.0, -46.123, 2.902, 3.940, -95)
     threshold = estimate_distance_params[4]
     estimate_distance_params = estimate_distance_params[:4]
 
     if spring_model_params is None:
-        spring_model_params = sim_data_params["spring_params"]
+        spring_model_params = (5*n, 0.2, 0.1, False, 1)
+
     max_iterations = spring_model_params[0]
     step_size = spring_model_params[1]
-    step_size = 0.5/float(n)
     epsilon = spring_model_params[2]
     show_visualization = spring_model_params[3]
     n_init = spring_model_params[4]
@@ -205,8 +192,8 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         node_locs = mds.fit_transform(distance_matrix)
         estimated_distance_matrix = distance_matrix_from_locs(node_locs)
         # scale the data
-        transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])
-        estimated_distance_matrix = estimated_distance_matrix*transform
+        # transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])
+        # estimated_distance_matrix = estimated_distance_matrix*transform
         end = time.time()
         return np.round(estimated_distance_matrix,2), node_locs, end-start
 
@@ -222,8 +209,8 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         node_locs = isomap.fit_transform(distance_matrix)
         estimated_distance_matrix = distance_matrix_from_locs(node_locs)
         # scale the data
-        transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])
-        estimated_distance_matrix = estimated_distance_matrix*transform
+        # transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])
+        # estimated_distance_matrix = estimated_distance_matrix*transform
         end = time.time()
         return np.round(estimated_distance_matrix,2), node_locs, end-start
 
@@ -240,8 +227,8 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         node_locs = LLE.fit_transform(distance_matrix)
         estimated_distance_matrix = distance_matrix_from_locs(node_locs)
         # scale the data
-        transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])
-        estimated_distance_matrix = estimated_distance_matrix*transform
+        # transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])
+        # estimated_distance_matrix = estimated_distance_matrix*transform
         end = time.time()
         return np.round(estimated_distance_matrix,2), node_locs, end-start
 
