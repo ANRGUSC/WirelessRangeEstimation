@@ -1,5 +1,6 @@
 from estimate_distance_matrix import estimate_distance_matrix
 from make_simulated_data import SimulateRssTrial, SimulateTrialsFromTrinityData
+from make_summary_table import MakeSummaryTables
 
 import re
 import time
@@ -227,6 +228,8 @@ def MakeSettingPlots(filepath, approaches):
     full_table = pd.DataFrame()
     for name, sheet in trials_dict.items():
         if "trial" in name:
+            if (np.isinf(sheet['max_percent_error'].astype(float)).any()):
+                continue
             full_table = full_table.append(sheet)
 
     full_table.reset_index(inplace=True, drop=True)
@@ -612,13 +615,7 @@ if __name__ == '__main__':
     # # Make summary tables of different techniques performance
     elif mode == 'make_tables':
         files = [collection_path+item for item in os.listdir(collection_path) if "collection.xlsx" in item]
-        nproc = multiprocessing.cpu_count()
-        pool = multiprocessing.Pool(nproc-2)
-        for f_path in files:
-            MakeSummaryTables(f_path, snl_approaches)
-        #     pool.apply_async(MakeSummaryTables, args = (f_path, snl_approaches))
-        # pool.close()
-        # pool.join()
+        MakeSummaryTables(files, snl_approaches)
 
 
 
