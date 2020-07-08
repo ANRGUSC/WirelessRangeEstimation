@@ -47,7 +47,8 @@ def MakeSummaryTables(files, snl_approaches):
 
     table = pd.DataFrame()
     for app in approaches:
-        table[app] = 
+        return
+        # table[app] = []
 
 
 
