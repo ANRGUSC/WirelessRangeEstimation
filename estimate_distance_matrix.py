@@ -22,7 +22,7 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
         if initialization is not None:
             estimated_locations = initialization
         else:
-            estimated_locations = np.random.rand(n,2)*estimate_distance(np.min(rss_matrix))[0]
+            estimated_locations = np.random.rand(n,2)*10
         previous_estimates = estimated_locations.copy()
         for iteration in range(max_iterations):
             sum_all_forces = 0
@@ -31,7 +31,7 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
                 for j in range(n):
                     if j != i:
                         # remove "or True" to ignore rss values at the threshold
-                        if rss_matrix[i][j] > threshold:
+                        if rss_matrix[i][j] > threshold: # or True:
                             i_to_j = np.subtract(estimated_locations[j],estimated_locations[i])
                             dist_est = np.linalg.norm(i_to_j)
                             dist_meas, dist_min, dist_max = estimate_distance(rss_matrix[i][j], estimate_distance_params)
@@ -185,15 +185,15 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         distance_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
         np.fill_diagonal(distance_matrix,0)
         # uncomment to ignore rss values at the threshold
-        # distance_matrix[np.where(rss_matrix==threshold)] = 0
+        distance_matrix[np.where(rss_matrix==threshold)] = 0
         use_metric = False
         mds = manifold.MDS(n_components=2, metric=use_metric, max_iter=3000, eps=1e-12,
                     dissimilarity="precomputed", n_jobs=1, n_init=n_init)
         node_locs = mds.fit_transform(distance_matrix)
         estimated_distance_matrix = distance_matrix_from_locs(node_locs)
         # scale the data
-        transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])
-        estimated_distance_matrix = estimated_distance_matrix*transform
+        # transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])
+        # estimated_distance_matrix = estimated_distance_matrix*transform
         end = time.time()
         return np.round(estimated_distance_matrix,2), node_locs, end-start
 
@@ -209,8 +209,8 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         node_locs = isomap.fit_transform(distance_matrix)
         estimated_distance_matrix = distance_matrix_from_locs(node_locs)
         # scale the data
-        transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])
-        estimated_distance_matrix = estimated_distance_matrix*transform
+        # transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])
+        # estimated_distance_matrix = estimated_distance_matrix*transform
         end = time.time()
         return np.round(estimated_distance_matrix,2), node_locs, end-start
 
@@ -227,8 +227,8 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         node_locs = LLE.fit_transform(distance_matrix)
         estimated_distance_matrix = distance_matrix_from_locs(node_locs)
         # scale the data
-        transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])
-        estimated_distance_matrix = estimated_distance_matrix*transform
+        # transform = np.mean(distance_matrix[distance_matrix>0])/np.mean(estimated_distance_matrix[distance_matrix>0])
+        # estimated_distance_matrix = estimated_distance_matrix*transform
         end = time.time()
         return np.round(estimated_distance_matrix,2), node_locs, end-start
 
@@ -244,13 +244,13 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         dist_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
         dist_dict = DistanceMatrixToDict(dist_matrix)
         # uncomment to ignore rss values at the threshold
-        # dist_dict = dict()
-        # for i in range(n):
-        #     for j in range(i+1,n):
-        #         edge = (i,j)
-        #         if rss_matrix[i,j] > threshold:
-        #             dist = dist_matrix[i,j]
-        #             dist_dict[edge] = dist
+        dist_dict = dict()
+        for i in range(n):
+            for j in range(i+1,n):
+                edge = (i,j)
+                if rss_matrix[i,j] > threshold:
+                    dist = dist_matrix[i,j]
+                    dist_dict[edge] = dist
         node_node_dists = dict()
         node_anchor_dists = dict()
         anchor_locs = dict()
@@ -276,13 +276,13 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
         dist_matrix = estimate_distance(rss_matrix,estimate_distance_params)[0]
         dist_dict = DistanceMatrixToDict(dist_matrix)
         # uncomment to ignore rss values at the threshold
-        # dist_dict = dict()
-        # for i in range(n):
-        #     for j in range(i+1,n):
-        #         edge = (i,j)
-        #         if rss_matrix[i,j] > threshold:
-        #             dist = dist_matrix[i,j]
-        #             dist_dict[edge] = dist
+        dist_dict = dict()
+        for i in range(n):
+            for j in range(i+1,n):
+                edge = (i,j)
+                if rss_matrix[i,j] > threshold:
+                    dist = dist_matrix[i,j]
+                    dist_dict[edge] = dist
         node_node_dists = dict()
         node_anchor_dists = dict()
         anchor_locs = dict()
