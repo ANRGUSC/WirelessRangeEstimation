@@ -166,9 +166,7 @@ if __name__ == '__main__':
     for dv in dist_val:
         print(net_df[net_df['dist']==dv]['rssi'].astype(float).std())
 
-    # print(net_df[net_df['dist']==1]['rssi'].astype(float))
-
-    # output_file = path+"aggregate_data.csv"
-    # net_df.to_csv(output_file, index=False)
+    output_file = path+"aggregate_data.csv"
+    net_df.to_csv(output_file, index=False)
 
 
