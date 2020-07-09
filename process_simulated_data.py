@@ -14,6 +14,7 @@ import multiprocessing
 from openpyxl import load_workbook
 import matplotlib.pyplot as plt
 from scipy.special import ndtr
+from shutil import copy2
 
 def GetNodeNumFromFilepath(fpath):
     temp = fpath[fpath.index("_data/")+6:fpath.index("nodes_")]
@@ -219,6 +220,12 @@ def TestSNLApproaches(filepath, approaches, ble_params):
     writer.close()
     end = time.time()
     print("Wrote data to:", filepath, np.round(end-start,2), "(sec)")
+
+    # copy file to /temp/ just in case
+    if not os.path.isdir('./temp/'):
+        os.mkdir('./temp')
+    copy2(filepath, './temp/')
+
 
 def MakeSettingPlots(filepath, approaches):
     print(filepath)
