@@ -135,8 +135,8 @@ if __name__ == '__main__':
             if 'samsung' in fpath:
                 continue
             temp_df = ProcFig1Data(fpath)
-        if re.compile(r'fig2[a]_').search(fpath):
-            temp_df = ProcFig2Data(fpath)
+        # if re.compile(r'fig2[a]_').search(fpath):
+        #     temp_df = ProcFig2Data(fpath)
         # if re.compile(r'fig3_').search(fpath):
         #     temp_df = ProcFig3Data(fpath)
         # if re.compile(r'fig4_').search(fpath):
@@ -168,7 +168,7 @@ if __name__ == '__main__':
 
     # print(net_df[net_df['dist']==1]['rssi'].astype(float))
 
-    output_file = path+"aggregate_data.csv"
-    net_df.to_csv(output_file, index=False)
+    # output_file = path+"aggregate_data.csv"
+    # net_df.to_csv(output_file, index=False)
 
 

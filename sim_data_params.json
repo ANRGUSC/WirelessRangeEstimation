@@ -32,16 +32,13 @@
     "collection_dir": "/collection/",
     "num_nodes_list": [
         10,
-	25,
-	50,
-	100,
-        250
+        25
     ],
     "area_lengths": [
 	10,
         20,
         40
     ],
-    "num_repeat_settings": 50,
+    "num_repeat_settings": 10,
     "large_data_thresh": 100
 }

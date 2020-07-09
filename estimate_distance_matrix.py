@@ -140,7 +140,7 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
 
     max_iterations = spring_model_params[0]
     step_size = spring_model_params[1]
-    step_size = 1/n
+    step_size = 0.5/n
     epsilon = spring_model_params[2]
     show_visualization = spring_model_params[3]
     n_init = spring_model_params[4]
