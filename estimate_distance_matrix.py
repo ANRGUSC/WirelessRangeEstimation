@@ -27,7 +27,7 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
         for iteration in range(max_iterations):
             sum_all_forces = 0
             for i in range(n):
-                total_force = [0,0]
+                total_force = np.array([0,0])
                 for j in range(n):
                     if j != i:
                         # remove "or True" to ignore rss values at the threshold
