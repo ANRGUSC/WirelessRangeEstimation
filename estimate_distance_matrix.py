@@ -15,7 +15,7 @@ def distance_matrix_from_locs(node_locs):
     return distance_matrix
 
 def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_distance_params,epsilon,show_visualization,initialization=None,n_init=1):
-    best_solution_matrix, best_solution_locations, best_solution_stress = None, None, 10000
+    best_solution_matrix, best_solution_locations, best_solution_stress = None, None, np.inf
     start = time.time()
     for random_initialization in range(n_init):
         # start with random estimates
@@ -66,7 +66,7 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
                 time.sleep(0.01)
         final_stress = sum_all_forces
         estimated_distance_matrix = distance_matrix_from_locs(estimated_locations)
-        if final_stress < best_solution_stress:
+        if final_stress <= best_solution_stress:
             best_solution_matrix = estimated_distance_matrix
             best_solution_locations = estimated_locations
             best_solution_stress = final_stress
@@ -140,6 +140,7 @@ def estimate_distance_matrix(rss_matrix, use_model="spring_model",estimate_dista
 
     max_iterations = spring_model_params[0]
     step_size = spring_model_params[1]
+    step_size = 1/n
     epsilon = spring_model_params[2]
     show_visualization = spring_model_params[3]
     n_init = spring_model_params[4]
