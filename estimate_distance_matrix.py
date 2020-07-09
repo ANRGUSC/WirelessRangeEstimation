@@ -35,12 +35,15 @@ def solve_spring_model(max_iterations,step_size,n,rss_matrix,threshold,estimate_
                             i_to_j = np.subtract(estimated_locations[j],estimated_locations[i])
                             dist_est = np.linalg.norm(i_to_j)
 
-                            if dist_est > 999:
-                                continue
-
                             dist_meas, dist_min, dist_max = estimate_distance(rss_matrix[i][j], estimate_distance_params)
                             uncertainty = dist_max-dist_min
                             e = (dist_est-dist_meas)
+
+                            # Adding this to avoid huge loops over diverging systems
+                            if np.inf in i_to_j or np.inf is dist_est:
+                                print("Divergence in spring solver")
+                                continue
+
                             # magnitude of force applied by a pair is the error in our current estimate,
                             # weighted by how likely the RSS measurement is to be accurate
                             if dist_est > 0:
