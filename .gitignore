@@ -34,6 +34,7 @@ ehthumbs.db
 # Data #
 #############
 simulated_trinity_data/*
+temp/
 # *.xlsx
 *.log
 
