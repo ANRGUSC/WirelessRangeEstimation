@@ -136,13 +136,14 @@ def CollectSettingData(exp_setting, experiment_paths, collection_dir):
             trial_results_df.to_excel(writer, sheet_name = trial_name)
         except:
             print("No sheet named \'estimation_performance\' in %s"%(trial_path))
+            experiment_paths.remove(trial_path)
             continue
     writer.save()
     writer.close()
 
     end = time.time()
-    print(exp_setting)
-    print(experiment_paths)
+    # print(exp_setting)
+    print(len(experiment_paths), "trials used")
     print("Gathered results for:", exp_setting, np.round(end-start,2), "(sec)")
     print()
 
