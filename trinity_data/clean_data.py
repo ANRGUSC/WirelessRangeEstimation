@@ -130,29 +130,29 @@ if __name__ == '__main__':
     for fpath in files:
         temp_df = None
         if re.compile(r'fig1[a]_').search(fpath):
-            if 'huawei' in fpath:
-                continue
-            if 'samsung' in fpath:
-                continue
+            # if 'huawei' in fpath:
+            #     continue
+            # if 'samsung' in fpath:
+            #     continue
             temp_df = ProcFig1Data(fpath)
-        # if re.compile(r'fig2[a]_').search(fpath):
-        #     temp_df = ProcFig2Data(fpath)
-        # if re.compile(r'fig3_').search(fpath):
-        #     temp_df = ProcFig3Data(fpath)
-        # if re.compile(r'fig4_').search(fpath):
-        #     temp_df = ProcFig4Data(fpath)
-        # if re.compile(r'fig5_').search(fpath):
-        #     temp_df = ProcFig5Data(fpath)
-        # if re.compile(r'fig7[abcd]_').search(fpath):
-        #     temp_df = ProcFig7Data(fpath)
-        # if re.compile(r'fig8_').search(fpath):
-        #     temp_df = ProcFig8Data(fpath)
-        # if re.compile(r'fig9[abcd]_').search(fpath):
-        #     temp_df = ProcFig9Data(fpath)
-        # if re.compile(r'fig13[ab]_').search(fpath):
-        #     temp_df = ProcFig13Data(fpath)
-        # if re.compile(r'fig14[abc]_').search(fpath):
-        #     temp_df = ProcFig14Data(fpath)
+        if re.compile(r'fig2[a]_').search(fpath):
+            temp_df = ProcFig2Data(fpath)
+        if re.compile(r'fig3_').search(fpath):
+            temp_df = ProcFig3Data(fpath)
+        if re.compile(r'fig4_').search(fpath):
+            temp_df = ProcFig4Data(fpath)
+        if re.compile(r'fig5_').search(fpath):
+            temp_df = ProcFig5Data(fpath)
+        if re.compile(r'fig7[abcd]_').search(fpath):
+            temp_df = ProcFig7Data(fpath)
+        if re.compile(r'fig8_').search(fpath):
+            temp_df = ProcFig8Data(fpath)
+        if re.compile(r'fig9[abcd]_').search(fpath):
+            temp_df = ProcFig9Data(fpath)
+        if re.compile(r'fig13[ab]_').search(fpath):
+            temp_df = ProcFig13Data(fpath)
+        if re.compile(r'fig14[abc]_').search(fpath):
+            temp_df = ProcFig14Data(fpath)
 
         if temp_df is not None:
             if net_df is None:
