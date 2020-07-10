@@ -131,8 +131,12 @@ def CollectSettingData(exp_setting, experiment_paths, collection_dir):
     writer = pd.ExcelWriter(collection_dir+exp_setting+"_collection.xlsx", engine = 'openpyxl')
     for trial_path in experiment_paths:
         trial_name = trial_path[trial_path.find("_trial")+1:trial_path.find(".xlsx")]
-        trial_results_df = pd.read_excel(trial_path, sheet_name="estimation_performance", index_col=0)
-        trial_results_df.to_excel(writer, sheet_name = trial_name)
+        try:
+            trial_results_df = pd.read_excel(trial_path, sheet_name="estimation_performance", index_col=0)
+            trial_results_df.to_excel(writer, sheet_name = trial_name)
+        except:
+            print("No sheet named \'estimation_performance\' in %s"%(trial_path))
+            continue
     writer.save()
     writer.close()
 
