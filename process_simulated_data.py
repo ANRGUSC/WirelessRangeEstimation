@@ -231,7 +231,6 @@ def TestSNLApproaches(filepath, approaches, ble_params):
         os.mkdir('./temp')
     copy2(filepath, './temp/')
 
-
 def MakeSettingPlots(filepath, approaches):
     print(filepath)
     start = time.time()
@@ -324,7 +323,7 @@ def MakeSettingPlots(filepath, approaches):
     figure = plt.gcf() # get current figure
     # plt.title("Max. Error")
     plt.ylabel("meters")
-    figure.set_size_inches(15, 6)
+    figure.set_size_inches(20, 6)
     my_fig.savefig(dir_name+setting+"_max_err.png", format="png")
     plt.close()
 
@@ -365,7 +364,8 @@ def MakeSettingPlots(filepath, approaches):
     boxplot = max_percent_err_df.boxplot(grid=False)
     figure = plt.gcf() # get current figure
     # plt.title("Max Percent Error")
-    figure.set_size_inches(15, 6)
+    plt.ylabel("Error (%)")
+    figure.set_size_inches(20, 6)
     my_fig.savefig(dir_name+setting+"_max_percent_err.png", format="png")
     plt.close()
 
@@ -407,7 +407,7 @@ def MakeSettingPlots(filepath, approaches):
     figure = plt.gcf() # get current figure
     # plt.title("Avg. Error")
     plt.ylabel("meters")
-    figure.set_size_inches(15, 6)
+    figure.set_size_inches(20, 6)
     my_fig.savefig(dir_name+setting+"_avg_error.png", format="png")
     plt.close()
 
@@ -448,7 +448,8 @@ def MakeSettingPlots(filepath, approaches):
     boxplot = avg_percent_err_df.boxplot(grid=False)
     figure = plt.gcf() # get current figure
     # plt.title("Avg. Percent Error")
-    figure.set_size_inches(15, 6)
+    plt.ylabel("Error (%)")
+    figure.set_size_inches(20, 6)
     my_fig.savefig(dir_name+setting+"_avg_percent_error.png", format="png")
     plt.close()
 
@@ -488,7 +489,8 @@ def MakeSettingPlots(filepath, approaches):
     boxplot = true_pos_df.boxplot(grid=False)
     figure = plt.gcf() # get current figure
     # plt.title("True Positive Rate")
-    figure.set_size_inches(15, 6)
+    plt.ylabel("(%/100)")
+    figure.set_size_inches(20, 6)
     my_fig.savefig(dir_name+setting+"_true_positive.png", format="png")
     plt.close()
 
@@ -497,7 +499,8 @@ def MakeSettingPlots(filepath, approaches):
     boxplot = false_pos_df.boxplot(grid=False)
     figure = plt.gcf() # get current figure
     # plt.title("False Positive Rate")
-    figure.set_size_inches(15, 6)
+    plt.ylabel("(%/100)")
+    figure.set_size_inches(20, 6)
     my_fig.savefig(dir_name+setting+"_false_positive.png", format="png")
     plt.close()
 
@@ -508,7 +511,7 @@ def MakeSettingPlots(filepath, approaches):
     figure = plt.gcf() # get current figure
     # plt.title("Runtime")
     plt.ylabel("seconds")
-    figure.set_size_inches(15, 6)
+    figure.set_size_inches(20, 6)
     my_fig.savefig(dir_name+setting+"_runtime.png", format="png")
     plt.close()
 
@@ -516,6 +519,8 @@ def MakeSettingPlots(filepath, approaches):
 
     end = time.time()
     print("Made figures for:", filepath, np.round(end-start,2), "(sec)")
+
+
 
 if __name__ == '__main__':
 
